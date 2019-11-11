@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 916e18d8d586
+Revision ID: 2f9061f0cb0b
 Revises: 
-Create Date: 2019-11-11 13:47:59.317068
+Create Date: 2019-11-11 14:34:07.202773
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '916e18d8d586'
+revision = '2f9061f0cb0b'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -61,7 +61,7 @@ def upgrade():
     sa.Column('name', sa.String(length=128), nullable=False),
     sa.Column('start_at', postgresql.TIMESTAMP(), nullable=False),
     sa.Column('end_at', postgresql.TIMESTAMP(), nullable=False),
-    sa.Column('social_id', postgresql.UUID(as_uuid=True), nullable=False),
+    sa.Column('social_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.ForeignKeyConstraint(['social_id'], ['social.id'], onupdate='CASCADE', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
@@ -75,7 +75,7 @@ def upgrade():
     sa.Column('price', sa.Integer(), server_default='0', nullable=False),
     sa.Column('start_at', postgresql.TIMESTAMP(), nullable=False),
     sa.Column('end_at', postgresql.TIMESTAMP(), nullable=False),
-    sa.Column('social_id', postgresql.UUID(as_uuid=True), nullable=False),
+    sa.Column('social_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.ForeignKeyConstraint(['social_id'], ['social.id'], onupdate='CASCADE', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
@@ -86,7 +86,7 @@ def upgrade():
     sa.Column('deleted_at', postgresql.TIMESTAMP(), nullable=True),
     sa.Column('name', sa.String(length=128), nullable=False),
     sa.Column('address', sa.String(length=128), nullable=False),
-    sa.Column('social_id', postgresql.UUID(as_uuid=True), nullable=False),
+    sa.Column('social_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.ForeignKeyConstraint(['social_id'], ['social.id'], onupdate='CASCADE', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
@@ -97,7 +97,7 @@ def upgrade():
     sa.Column('deleted_at', postgresql.TIMESTAMP(), nullable=True),
     sa.Column('name', sa.String(length=128), nullable=False),
     sa.Column('description', sa.String(length=128), nullable=False),
-    sa.Column('social_id', postgresql.UUID(as_uuid=True), nullable=False),
+    sa.Column('social_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.ForeignKeyConstraint(['social_id'], ['social.id'], onupdate='CASCADE', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
@@ -113,8 +113,6 @@ def upgrade():
     sa.Column('start_at', postgresql.TIMESTAMP(), nullable=False),
     sa.Column('end_at', postgresql.TIMESTAMP(), nullable=False),
     sa.Column('teachter_id', postgresql.UUID(as_uuid=True), nullable=False),
-    sa.Column('studio_id', postgresql.UUID(as_uuid=True), nullable=False),
-    sa.ForeignKeyConstraint(['studio_id'], ['studio.id'], onupdate='CASCADE', ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['teachter_id'], ['teachter.id'], onupdate='CASCADE', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
@@ -128,7 +126,7 @@ def upgrade():
     sa.Column('point', sa.Integer(), server_default='0', nullable=False),
     sa.Column('start_at', postgresql.TIMESTAMP(), nullable=False),
     sa.Column('end_at', postgresql.TIMESTAMP(), nullable=False),
-    sa.Column('studio_id', postgresql.UUID(as_uuid=True), nullable=False),
+    sa.Column('studio_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.ForeignKeyConstraint(['studio_id'], ['studio.id'], onupdate='CASCADE', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )

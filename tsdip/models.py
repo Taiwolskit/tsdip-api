@@ -24,6 +24,9 @@ class Base():
     )
     deleted_at = db.Column(TIMESTAMP)
 
+    def to_dict(self):
+        return {c.name: getattr(self, c.name, None) for c in self.__table__.columns}
+
 
 lesson_log = db.Table(
     'lesson_log',
@@ -76,7 +79,6 @@ class User(Base, db.Model):
     courses = db.relationship(
         'Course',
         secondary=lesson_log,
-        backref=db.backref('students', lazy='dynamic'),
         lazy='dynamic'
     )
 
@@ -150,11 +152,6 @@ class Course(Base, db.Model):
         db.ForeignKey('teachter.id', onupdate='CASCADE', ondelete='CASCADE'),
         nullable=False
     )
-    studio_id = db.Column(
-        UUID(as_uuid=True),
-        db.ForeignKey('studio.id', onupdate='CASCADE', ondelete='CASCADE'),
-        nullable=False
-    )
     students = db.relationship(
         'User',
         secondary=lesson_log,
@@ -204,8 +201,7 @@ class DanceGroup(Base, db.Model):
     end_at = db.Column(TIMESTAMP, nullable=False)
     social_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('social.id', onupdate='CASCADE', ondelete='CASCADE'),
-        nullable=False
+        db.ForeignKey('social.id', onupdate='CASCADE', ondelete='CASCADE')
     )
     dancers = db.relationship(
         'Teachter',
@@ -223,8 +219,7 @@ class Event(Base, db.Model):
     end_at = db.Column(TIMESTAMP, nullable=False)
     social_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('social.id', onupdate='CASCADE', ondelete='CASCADE'),
-        nullable=False
+        db.ForeignKey('social.id', onupdate='CASCADE', ondelete='CASCADE')
     )
 
 
@@ -236,8 +231,7 @@ class Plan(Base, db.Model):
     end_at = db.Column(TIMESTAMP, nullable=False)
     studio_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('studio.id', onupdate='CASCADE', ondelete='CASCADE'),
-        nullable=False
+        db.ForeignKey('studio.id', onupdate='CASCADE', ondelete='CASCADE')
     )
 
 
@@ -281,8 +275,7 @@ class Teachter(Base, db.Model):
     description = db.Column(db.String(128), nullable=False)
     social_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('social.id', onupdate='CASCADE', ondelete='CASCADE'),
-        nullable=False
+        db.ForeignKey('social.id', onupdate='CASCADE', ondelete='CASCADE')
     )
     studios = db.relationship(
         'Studio',
@@ -293,11 +286,9 @@ class Teachter(Base, db.Model):
 
 
 class Studio(Base, db.Model):
-    name = db.Column(db.String(128), nullable=False)
+    name = db.Column(db.String(128), nullable=False, unique=True)
     address = db.Column(db.String(128), nullable=False)
-
     social_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('social.id', onupdate='CASCADE', ondelete='CASCADE'),
-        nullable=False
+        db.ForeignKey('social.id', onupdate='CASCADE', ondelete='CASCADE')
     )

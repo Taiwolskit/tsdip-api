@@ -53,16 +53,19 @@ def handle_exception(e):
     if isinstance(e, HTTPException):
         return e
     error = e.args[0]
+    app.logger.debug(f'Error {error}')
+
     code = error['code']
+    description = error['description']
     http_status_code = error['http_status_code']
     status = error['status']
 
-    response = format_error_message(code, status)
+    response = format_error_message(code, status, description)
 
     return Response(
+        content_type="application/json",
         response=response,
         status=http_status_code,
-        content_type="application/json"
     )
 
 
