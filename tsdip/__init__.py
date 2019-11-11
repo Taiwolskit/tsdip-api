@@ -13,11 +13,10 @@ def create_app(config=None):
     app.config.from_object(config)
     app.app_context().push()
     db.init_app(app)
-    # ensure the instance folder exists
-    try:
-        os.makedirs(app.instance_path)
-    except OSError:
-        pass
+
+    from .routes.studio import api_blueprint as studio_blueprint
+
+    app.register_blueprint(studio_blueprint)
 
     # a simple page that says hello
     @app.route('/hello')

@@ -1,7 +1,7 @@
 from sqlalchemy import CheckConstraint, func, text
 from sqlalchemy.dialects.postgresql import ENUM, FLOAT, TIMESTAMP, UUID
 
-from src import db
+from tsdip import db
 
 
 class Base():
@@ -150,9 +150,9 @@ class Course(Base, db.Model):
         db.ForeignKey('teachter.id', onupdate='CASCADE', ondelete='CASCADE'),
         nullable=False
     )
-    workshop_id = db.Column(
+    studio_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('workshop.id', onupdate='CASCADE', ondelete='CASCADE'),
+        db.ForeignKey('studio.id', onupdate='CASCADE', ondelete='CASCADE'),
         nullable=False
     )
     students = db.relationship(
@@ -234,20 +234,20 @@ class Plan(Base, db.Model):
     point = db.Column(db.Integer, nullable=False, server_default='0')
     start_at = db.Column(TIMESTAMP, nullable=False)
     end_at = db.Column(TIMESTAMP, nullable=False)
-    workshop_id = db.Column(
+    studio_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('workshop.id', onupdate='CASCADE', ondelete='CASCADE'),
+        db.ForeignKey('studio.id', onupdate='CASCADE', ondelete='CASCADE'),
         nullable=False
     )
 
 
-rel_workshop_teachter = db.Table(
-    'rel_workshop_teachter',
+rel_studio_teachter = db.Table(
+    'rel_studio_teachter',
     db.metadata,
     db.Column(
-        'workshop_id',
+        'studio_id',
         UUID(as_uuid=True),
-        db.ForeignKey('workshop.id', onupdate='CASCADE', ondelete='CASCADE'),
+        db.ForeignKey('studio.id', onupdate='CASCADE', ondelete='CASCADE'),
         primary_key=True
     ),
     db.Column(
@@ -284,15 +284,15 @@ class Teachter(Base, db.Model):
         db.ForeignKey('social.id', onupdate='CASCADE', ondelete='CASCADE'),
         nullable=False
     )
-    workshops = db.relationship(
-        'Workshop',
-        secondary=rel_workshop_teachter,
+    studios = db.relationship(
+        'Studio',
+        secondary=rel_studio_teachter,
         backref=db.backref('teachters', lazy='dynamic'),
         lazy='dynamic'
     )
 
 
-class Workspace(Base, db.Model):
+class Studio(Base, db.Model):
     name = db.Column(db.String(128), nullable=False)
     address = db.Column(db.String(128), nullable=False)
 

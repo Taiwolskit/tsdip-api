@@ -5,7 +5,7 @@ class Config():
     """ """
     DEBUG = False
     TESTING = False
-    FLASK_APP = os.getenv('FLASK_APP', 'app.py')
+    FLASK_APP = os.getenv('FLASK_APP', 'flasky.py')
     FLASK_ENV = os.getenv('FLASK_ENV', 'development')
     SQLALCHEMY_DATABASE_URI = os.getenv(
         'SQLALCHEMY_DATABASE_URI',

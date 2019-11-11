@@ -2,11 +2,13 @@ import os
 
 import click
 from dotenv import load_dotenv
-from flask import current_app, g, request
-from flask_migrate import Migrate
+from flask import Response, g, request
 from flask.cli import with_appcontext
+from flask_migrate import Migrate
+from werkzeug.exceptions import HTTPException
 
 from tsdip import create_app, db
+from tsdip.formatter import format_error_message
 
 load_dotenv()
 config = 'config.DevelopmentConfig'
@@ -46,9 +48,7 @@ def after_request(response):
 @app.errorhandler(Exception)
 def handle_exception(e):
     """
-
     :param e:
-
     """
     if isinstance(e, HTTPException):
         return e
