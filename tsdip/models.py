@@ -28,20 +28,19 @@ class Base():
         return {c.name: getattr(self, c.name, None) for c in self.__table__.columns}
 
 
-lesson_log = db.Table(
-    'lesson_log',
+rel_lesson_log = db.Table(
+    'rel_lesson_log',
     db.metadata,
-    db.Column(
-        'course_id',
-        UUID(as_uuid=True),
-        db.ForeignKey('course.id', onupdate='CASCADE',
-                      ondelete='CASCADE'),
-        primary_key=True
-    ),
     db.Column(
         'user_id',
         UUID(as_uuid=True),
         db.ForeignKey('user.id', onupdate='CASCADE', ondelete='CASCADE'),
+        primary_key=True
+    ),
+    db.Column(
+        'course_id',
+        UUID(as_uuid=True),
+        db.ForeignKey('course.id', onupdate='CASCADE', ondelete='CASCADE'),
         primary_key=True
     ),
     db.Column(
@@ -72,33 +71,35 @@ class User(Base, db.Model):
         CheckConstraint('age > 7'),
     )
 
-    email = db.Column(db.String(128), nullable=False)
+    email = db.Column(db.String(128), nullable=False, unique=True)
     name = db.Column(db.String(128), nullable=False)
-    gender = db.Column(ENUM('secret', 'male', 'female', name='gen'))
+    gender = db.Column(ENUM('secret', 'male', 'female',
+                            name='gen'), server_default='secret')
     age = db.Column(db.Integer)
     courses = db.relationship(
         'Course',
-        secondary=lesson_log,
+        secondary=rel_lesson_log,
         lazy='dynamic'
     )
 
 
 class Social(Base, db.Model):
-    fan_page = db.Column(db.String(128), nullable=False)
-    instagram = db.Column(db.String(128), nullable=False)
-    line = db.Column(db.String(128), nullable=False)
-    website = db.Column(db.String(128), nullable=False)
-    youtube = db.Column(db.String(128), nullable=False)
+    email = db.Column(db.String(128))
+    fan_page = db.Column(db.String(128))
+    instagram = db.Column(db.String(128))
+    line = db.Column(db.String(128))
+    telephone = db.Column(db.String(128))
+    website = db.Column(db.String(128))
+    youtube = db.Column(db.String(128))
 
 
-purchase_log = db.Table(
-    'purchase_log',
+rel_purchase_log = db.Table(
+    'rel_purchase_log',
     db.metadata,
     db.Column(
         'user_id',
         UUID(as_uuid=True),
-        db.ForeignKey('user.id', onupdate='CASCADE',
-                      ondelete='CASCADE'),
+        db.ForeignKey('user.id', onupdate='CASCADE', ondelete='CASCADE'),
         primary_key=True
     ),
     db.Column(
@@ -110,8 +111,7 @@ purchase_log = db.Table(
     db.Column(
         'coupon_id',
         UUID(as_uuid=True),
-        db.ForeignKey('coupon.id', onupdate='CASCADE', ondelete='CASCADE'),
-        primary_key=True
+        db.ForeignKey('coupon.id', onupdate='CASCADE', ondelete='CASCADE')
     ),
     db.Column(
         'created_at',
@@ -134,7 +134,7 @@ purchase_log = db.Table(
 
 
 class Coupon(Base, db.Model):
-    code = db.Column(db.String(128), nullable=False)
+    code = db.Column(db.String(128), nullable=False, unique=True)
     amount = db.Column(db.Integer, nullable=False, server_default='1')
     start_at = db.Column(TIMESTAMP, nullable=False)
     end_at = db.Column(TIMESTAMP, nullable=False)
@@ -142,11 +142,14 @@ class Coupon(Base, db.Model):
 
 class Course(Base, db.Model):
     name = db.Column(db.String(128), nullable=False)
-    year = db.Column(db.Integer, nullable=False)
-    month = db.Column(db.Integer, nullable=False)
-    day = db.Column(db.Integer, nullable=False)
     start_at = db.Column(TIMESTAMP, nullable=False)
     end_at = db.Column(TIMESTAMP, nullable=False)
+    substitute = db.Column(db.Boolean, nullable=False, server_default='0')
+    studio_id = db.Column(
+        UUID(as_uuid=True),
+        db.ForeignKey('studio.id', onupdate='CASCADE', ondelete='CASCADE'),
+        nullable=False
+    )
     teachter_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey('teachter.id', onupdate='CASCADE', ondelete='CASCADE'),
@@ -154,7 +157,7 @@ class Course(Base, db.Model):
     )
     students = db.relationship(
         'User',
-        secondary=lesson_log,
+        secondary=rel_lesson_log,
         lazy='dynamic'
     )
 
@@ -198,7 +201,7 @@ rel_group_teachter = db.Table(
 class DanceGroup(Base, db.Model):
     name = db.Column(db.String(128), nullable=False)
     start_at = db.Column(TIMESTAMP, nullable=False)
-    end_at = db.Column(TIMESTAMP, nullable=False)
+    end_at = db.Column(TIMESTAMP)
     social_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey('social.id', onupdate='CASCADE', ondelete='CASCADE')
@@ -213,8 +216,12 @@ class DanceGroup(Base, db.Model):
 
 class Event(Base, db.Model):
     name = db.Column(db.String(128), nullable=False)
+    description = db.Column(db.String(128))
     amount = db.Column(db.Integer, nullable=False, server_default='1')
     price = db.Column(db.Integer, nullable=False, server_default='0')
+    reg_link = db.Column(db.String(128), nullable=False, unique=True)
+    reg_start_at = db.Column(TIMESTAMP, nullable=False)
+    reg_end_at = db.Column(TIMESTAMP, nullable=False)
     start_at = db.Column(TIMESTAMP, nullable=False)
     end_at = db.Column(TIMESTAMP, nullable=False)
     social_id = db.Column(
@@ -228,7 +235,7 @@ class Plan(Base, db.Model):
     price = db.Column(db.Integer, nullable=False, server_default='0')
     point = db.Column(db.Integer, nullable=False, server_default='0')
     start_at = db.Column(TIMESTAMP, nullable=False)
-    end_at = db.Column(TIMESTAMP, nullable=False)
+    end_at = db.Column(TIMESTAMP)
     studio_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey('studio.id', onupdate='CASCADE', ondelete='CASCADE')
@@ -272,7 +279,7 @@ rel_studio_teachter = db.Table(
 
 class Teachter(Base, db.Model):
     name = db.Column(db.String(128), nullable=False)
-    description = db.Column(db.String(128), nullable=False)
+    description = db.Column(db.String(255), nullable=False)
     social_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey('social.id', onupdate='CASCADE', ondelete='CASCADE')
@@ -292,3 +299,4 @@ class Studio(Base, db.Model):
         UUID(as_uuid=True),
         db.ForeignKey('social.id', onupdate='CASCADE', ondelete='CASCADE')
     )
+    courses = db.relationship('Course', lazy='dynamic')
