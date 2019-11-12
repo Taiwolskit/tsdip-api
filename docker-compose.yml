@@ -11,8 +11,8 @@ services:
       - 5432:5432
     networks:
       - tsdip
-    # volumes:
-    #   - db-data:/var/lib/postgresql/data
+    volumes:
+      - tsdip-db:/var/lib/postgresql/data
 
   api:
     build: .
@@ -27,24 +27,9 @@ services:
       - ./:/usr/app
     depends_on:
       - pg
-    #   - redis
-
-  # worker:
-  #   build: .
-  #   image: tsdip-worker
-  #   container_name: tsdip-worker
-  #   entrypoint: celery worker -A src.tasks -l INFO
-  #   env_file: .env
-  #   networks:
-  #     - tsdip
-  #   volumes:
-  #     - ./:/usr/app
-    # depends_on:
-    #   - pg
-    #   - redis
 
 networks:
   tsdip:
 
 volumes:
-  db-data:
+  tsdip-db:
