@@ -11,12 +11,6 @@ from tsdip.models import Studio
 api_blueprint = Blueprint('studios', __name__, url_prefix='/studios')
 
 
-@api_blueprint.route('/', methods=['GET'])
-def index():
-    """ """
-    return jsonify({'Data': 'Hello World'})
-
-
 class StudioSchema(Schema):
     name = fields.Str(required=True)
     address = fields.Str(required=True)
@@ -50,6 +44,7 @@ def create():
         g.db_session.flush(row)
         res = row.to_dict()
     except Exception as err:
+        app.logger.error(err)
         raise Exception({
             'code': 'ROUTE_AUTH_2',
             'description': str(err),

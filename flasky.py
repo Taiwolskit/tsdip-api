@@ -53,7 +53,7 @@ def handle_exception(e):
     if isinstance(e, HTTPException):
         return e
     error = e.args[0]
-    app.logger.debug(f'Error {error}')
+    app.logger.debug(f'errorhandler {error}')
 
     code = error['code']
     description = error['description']

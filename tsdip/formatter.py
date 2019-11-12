@@ -10,8 +10,9 @@ from tsdip.constants import (ErrorCode, ErrorMessage, ResponseStatus,
 
 def format_error_message(code, status='ERROR', description=None):
     """
-    :param code:
-    :param status:  (Default value = 'ERROR')
+    :param code: Custom Error Code
+    :param status: api status (Default value = 'ERROR')
+    :param description: error extra description (Default value = None)
     """
     error_code = ErrorCode[code].value
     error_message = ErrorMessage[code].value
@@ -22,10 +23,10 @@ def format_error_message(code, status='ERROR', description=None):
         'description': description,
         'message': error_message,
         'status': error_status,
-        'traceback': traceback.format_exc()
     }
 
     if app.config['DEBUG']:
+        res['traceback'] = traceback.format_exc()
         res['request'] = {
             'url': request.url,
             'body': request.get_json(),
@@ -34,12 +35,17 @@ def format_error_message(code, status='ERROR', description=None):
 
 
 def format_response(code, status='SUCCESS', data={}):
+    """
+    :param code: Custom Success Code
+    :param status: api status (Default value = 'SUCCESS')
+    :param data: api request data (Default value = {})
+    """
     res_status = ResponseStatus[status].value
     res_msg = SuccessMessage[code].value
     res = {
+        'data': data,
         'message': res_msg,
         'status': res_status,
-        'data': data
     }
 
     if app.config['DEBUG']:
