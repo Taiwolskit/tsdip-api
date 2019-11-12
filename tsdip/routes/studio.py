@@ -2,7 +2,7 @@ from http import HTTPStatus
 
 from flask import Blueprint
 from flask import current_app as app
-from flask import g, jsonify, request
+from flask import g, request
 from marshmallow import Schema, ValidationError, fields
 
 from tsdip.formatter import format_response
@@ -17,6 +17,7 @@ class StudioSchema(Schema):
 
 
 @api_blueprint.route('/create', methods=['POST'])
+@format_response
 def create():
     """ """
     try:
@@ -24,12 +25,12 @@ def create():
     except ValidationError as err:
         app.logger.error(err.messages)
         app.logger.error(err.valid_data)
-        raise Exception({
+        return {
             'code': 'ROUTE_AUTH_1',
             'description': err.messages,
             'http_status_code': HTTPStatus.BAD_REQUEST,
             'status': 'ERROR',
-        })
+        }
 
     data = request.get_json()
     name, address = data['name'], data['address']
@@ -45,11 +46,16 @@ def create():
         res = row.to_dict()
     except Exception as err:
         app.logger.error(err)
-        raise Exception({
+        return {
             'code': 'ROUTE_AUTH_2',
             'description': str(err),
             'http_status_code': HTTPStatus.BAD_REQUEST,
             'status': 'ERROR',
-        })
+        }
     else:
-        return format_response('ROUTE_AUTH_1', 'SUCCESS', res)
+        return {
+            'code': 'ROUTE_AUTH_1',
+            'data': res,
+            'http_status_code': HTTPStatus.CREATED,
+            'status': 'SUCCESS',
+        }

@@ -1,11 +1,49 @@
 import json
 import traceback
+from http import HTTPStatus
 
+from flask import Response
 from flask import current_app as app
 from flask import jsonify, request
 
 from tsdip.constants import (ErrorCode, ErrorMessage, ResponseStatus,
                              SuccessMessage)
+
+
+def format_response(fn):
+    def wrapper(*args, **kwargs):
+        res = fn(*args, **kwargs)
+
+        if 'status' in res:
+            if res['status'] == 'ERROR':
+                code = res['code']
+                description = res['description']
+                http_status_code = res['http_status_code']
+                status = res['status']
+
+                response = format_error_message(code, status, description)
+                return Response(
+                    content_type="application/json",
+                    response=response,
+                    status=http_status_code,
+                )
+            else:
+                code = res['code']
+                data = res['data']
+                http_status_code = res['http_status_code']
+                status = res['status']
+
+                response = format_success_response(code, status, data)
+                return jsonify(response), http_status_code
+        else:
+            response = format_error_message('ROUTE_AUTH_0')
+            return Response(
+                content_type="application/json",
+                response=response,
+                status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            )
+
+    return wrapper
 
 
 def format_error_message(code, status='ERROR', description=None):
@@ -34,7 +72,7 @@ def format_error_message(code, status='ERROR', description=None):
     return json.dumps(res)
 
 
-def format_response(code, status='SUCCESS', data={}):
+def format_success_response(code, status='SUCCESS', data={}):
     """
     :param code: Custom Success Code
     :param status: api status (Default value = 'SUCCESS')
@@ -53,4 +91,5 @@ def format_response(code, status='SUCCESS', data={}):
             'url': request.url,
             'body': request.get_json(),
         }
-    return jsonify(res)
+
+    return res

@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: aac5e68d40a4
+Revision ID: 7a61a35001a1
 Revises: 
-Create Date: 2019-11-11 16:56:25.275710
+Create Date: 2019-11-12 11:11:43.252409
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = 'aac5e68d40a4'
+revision = '7a61a35001a1'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -35,11 +35,13 @@ def upgrade():
     sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('deleted_at', postgresql.TIMESTAMP(), nullable=True),
-    sa.Column('fan_page', sa.String(length=128), nullable=False),
-    sa.Column('instagram', sa.String(length=128), nullable=False),
-    sa.Column('line', sa.String(length=128), nullable=False),
-    sa.Column('website', sa.String(length=128), nullable=False),
-    sa.Column('youtube', sa.String(length=128), nullable=False),
+    sa.Column('email', sa.String(length=128), nullable=True),
+    sa.Column('fan_page', sa.String(length=128), nullable=True),
+    sa.Column('instagram', sa.String(length=128), nullable=True),
+    sa.Column('line', sa.String(length=128), nullable=True),
+    sa.Column('telephone', sa.String(length=128), nullable=True),
+    sa.Column('website', sa.String(length=128), nullable=True),
+    sa.Column('youtube', sa.String(length=128), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('user',
@@ -52,7 +54,8 @@ def upgrade():
     sa.Column('gender', postgresql.ENUM('secret', 'male', 'female', name='gen'), server_default='secret', nullable=False),
     sa.Column('age', sa.Integer(), nullable=True),
     sa.CheckConstraint('age > 7'),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('email')
     )
     op.create_table('dance_group',
     sa.Column('id', postgresql.UUID(as_uuid=True), server_default=sa.text('uuid_generate_v4()'), nullable=False),
@@ -72,13 +75,18 @@ def upgrade():
     sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('deleted_at', postgresql.TIMESTAMP(), nullable=True),
     sa.Column('name', sa.String(length=128), nullable=False),
+    sa.Column('description', sa.String(length=128), nullable=True),
     sa.Column('amount', sa.Integer(), server_default='1', nullable=False),
     sa.Column('price', sa.Integer(), server_default='0', nullable=False),
+    sa.Column('reg_link', sa.String(length=128), nullable=False),
+    sa.Column('reg_start_at', postgresql.TIMESTAMP(), nullable=False),
+    sa.Column('reg_end_at', postgresql.TIMESTAMP(), nullable=False),
     sa.Column('start_at', postgresql.TIMESTAMP(), nullable=False),
     sa.Column('end_at', postgresql.TIMESTAMP(), nullable=False),
     sa.Column('social_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.ForeignKeyConstraint(['social_id'], ['social.id'], onupdate='CASCADE', ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('reg_link')
     )
     op.create_table('studio',
     sa.Column('id', postgresql.UUID(as_uuid=True), server_default=sa.text('uuid_generate_v4()'), nullable=False),
@@ -98,7 +106,7 @@ def upgrade():
     sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('deleted_at', postgresql.TIMESTAMP(), nullable=True),
     sa.Column('name', sa.String(length=128), nullable=False),
-    sa.Column('description', sa.String(length=128), nullable=False),
+    sa.Column('description', sa.String(length=255), nullable=False),
     sa.Column('social_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.ForeignKeyConstraint(['social_id'], ['social.id'], onupdate='CASCADE', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
@@ -111,7 +119,10 @@ def upgrade():
     sa.Column('name', sa.String(length=128), nullable=False),
     sa.Column('start_at', postgresql.TIMESTAMP(), nullable=False),
     sa.Column('end_at', postgresql.TIMESTAMP(), nullable=False),
+    sa.Column('substitute', sa.Boolean(), server_default='0', nullable=False),
+    sa.Column('studio_id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('teachter_id', postgresql.UUID(as_uuid=True), nullable=False),
+    sa.ForeignKeyConstraint(['studio_id'], ['studio.id'], onupdate='CASCADE', ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['teachter_id'], ['teachter.id'], onupdate='CASCADE', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )

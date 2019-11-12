@@ -1,14 +1,13 @@
+import json
 import os
 
 import click
 from dotenv import load_dotenv
-from flask import Response, g, request
+from flask import g, request
 from flask.cli import with_appcontext
 from flask_migrate import Migrate
-from werkzeug.exceptions import HTTPException
 
 from tsdip import create_app, db
-from tsdip.formatter import format_error_message
 
 load_dotenv()
 config = 'config.DevelopmentConfig'
@@ -47,26 +46,17 @@ def after_request(response):
 
 @app.errorhandler(Exception)
 def handle_exception(e):
-    """
-    :param e:
-    """
-    if isinstance(e, HTTPException):
-        return e
-    error = e.args[0]
-    app.logger.debug(f'errorhandler {error}')
-
-    code = error['code']
-    description = error['description']
-    http_status_code = error['http_status_code']
-    status = error['status']
-
-    response = format_error_message(code, status, description)
-
-    return Response(
-        content_type="application/json",
-        response=response,
-        status=http_status_code,
-    )
+    """Return JSON instead of HTML for HTTP errors."""
+    # start with the correct headers and status code from the error
+    response = e.get_response()
+    # replace the body with JSON
+    response.data = json.dumps({
+        "code": e.code,
+        "name": e.name,
+        "description": e.description,
+    })
+    response.content_type = "application/json"
+    return response
 
 
 def init_db():
