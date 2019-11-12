@@ -26,7 +26,7 @@ def create():
         app.logger.error(err.messages)
         app.logger.error(err.valid_data)
         return {
-            'code': 'ROUTE_AUTH_1',
+            'code': 'ERROR_STUDIO_1',
             'description': err.messages,
             'http_status_code': HTTPStatus.BAD_REQUEST,
             'status': 'ERROR',
@@ -47,7 +47,7 @@ def create():
     except Exception as err:
         app.logger.error(err)
         return {
-            'code': 'ROUTE_AUTH_2',
+            'code': 'ERROR_STUDIO_2',
             'description': str(err),
             'http_status_code': HTTPStatus.BAD_REQUEST,
             'status': 'ERROR',
@@ -57,5 +57,41 @@ def create():
             'code': 'ROUTE_AUTH_1',
             'data': res,
             'http_status_code': HTTPStatus.CREATED,
+            'status': 'SUCCESS',
+        }
+
+
+@api_blueprint.route('', methods=['GET'])
+@format_response
+def get_list():
+    params = request.args.to_dict()
+    limit = int(params['limit']) if 'limit' in params and int(
+        params['limit']) < 50 else 10
+    page = int(params['page']) if 'page' in params and int(
+        params['page']) != 0 else 1
+
+    try:
+        data = g.db_session.query(Studio) \
+            .filter(Studio.deleted_at.is_(None)) \
+            .order_by(Studio.name.desc()) \
+            .paginate(page=page, per_page=limit)
+
+        result = []
+        while data.has_next or data.page == data.pages:
+            result = result + [item.as_dict() for item in tuple(data.items)]
+            data = data.next()
+    except Exception as err:
+        app.logger.error(err)
+        return {
+            'code': 'ERROR_STUDIO_3',
+            'description': str(err),
+            'http_status_code': HTTPStatus.INTERNAL_SERVER_ERROR,
+            'status': 'ERROR',
+        }
+    else:
+        return {
+            'code': 'ROUTE_AUTH_2',
+            'data': result,
+            'http_status_code': HTTPStatus.OK,
             'status': 'SUCCESS',
         }

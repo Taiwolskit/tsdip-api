@@ -17,7 +17,7 @@ def format_response(fn):
         if 'status' in res:
             if res['status'] == 'ERROR':
                 code = res['code']
-                description = res['description']
+                description = res['description'] if 'description' in res else None
                 http_status_code = res['http_status_code']
                 status = res['status']
 
@@ -29,7 +29,7 @@ def format_response(fn):
                 )
             else:
                 code = res['code']
-                data = res['data']
+                data = res['data'] if 'data' in res else {}
                 http_status_code = res['http_status_code']
                 status = res['status']
 
@@ -42,7 +42,7 @@ def format_response(fn):
                 response=response,
                 status=HTTPStatus.INTERNAL_SERVER_ERROR,
             )
-
+    wrapper.__name__ = fn.__name__
     return wrapper
 
 
