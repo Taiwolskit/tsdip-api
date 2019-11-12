@@ -74,7 +74,7 @@ class User(Base, db.Model):
     email = db.Column(db.String(128), nullable=False, unique=True)
     name = db.Column(db.String(128), nullable=False)
     gender = db.Column(ENUM('secret', 'male', 'female',
-                            name='gen'), server_default='secret')
+                            name='gen'), nullable=False, server_default='secret')
     age = db.Column(db.Integer)
     courses = db.relationship(
         'Course',
@@ -287,7 +287,11 @@ class Teachter(Base, db.Model):
     studios = db.relationship(
         'Studio',
         secondary=rel_studio_teachter,
-        backref=db.backref('teachters', lazy='dynamic'),
+        lazy='dynamic'
+    )
+    clubs = db.relationship(
+        'DanceGroup',
+        secondary=rel_group_teachter,
         lazy='dynamic'
     )
 
@@ -299,4 +303,4 @@ class Studio(Base, db.Model):
         UUID(as_uuid=True),
         db.ForeignKey('social.id', onupdate='CASCADE', ondelete='CASCADE')
     )
-    courses = db.relationship('Course', lazy='dynamic')
+    classes = db.relationship('Course', lazy='dynamic')
