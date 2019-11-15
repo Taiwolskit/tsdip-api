@@ -12,6 +12,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: docker login docker.pkg.github.com -u USERNAME -p GITHUB_TOKEN
       - name: Build the Docker image
-        run: docker build . --file Dockerfile --tag docker.pkg.github.com/taiwolkit/tsdip-api/tsdip-api:$GITHUB_REF
+        run: docker build . --file Dockerfile --tag docker.pkg.github.com/taiwolkit/tsdip-api/tsdip-api:$GITHUB_SHA
       - name: publish docker image to Github package registry
-        run: docker push docker.pkg.github.com/taiwolkit/tsdip-api/tsdip-api:$GITHUB_REF
+        run: docker push docker.pkg.github.com/taiwolkit/tsdip-api/tsdip-api:$GITHUB_SHA
