@@ -1,19 +1,17 @@
 name: Docker Image CI
 
-on: [push]
+on: push
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v1
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
-  lint:
-    runs-on: [ubuntu-latest]
-    steps:
-      - name: wemake-python-styleguide
-        uses: wemake-services/wemake-python-styleguide@0.12.5
+      - uses: actions/checkout@v1
+      - name: Login Docker
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: docker login docker.pkg.github.com -u USERNAME -p GITHUB_TOKEN
+      - name: Build the Docker image
+        run: docker build . --file Dockerfile --tag docker.pkg.github.com/Taiwolkit/tsdip-api/tsdip-api:{{GITHUB_REF}}
+      - name: publish docker image to Github package registry
+        run: docker push docker.pkg.github.com/Taiwolkit/tsdip-api/tsdip-api:{{GITHUB_REF}}
