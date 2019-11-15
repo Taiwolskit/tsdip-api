@@ -10,8 +10,9 @@ jobs:
       - name: Login Docker
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRE_TAG: ${GITHUB_REF#refs/tags/}
         run: docker login docker.pkg.github.com -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
       - name: Build the Docker image
-        run: docker build . --file Dockerfile --tag docker.pkg.github.com/taiwolkit/tsdip-api/tsdip-api:$GITHUB_SHA
+        run: docker build . --file Dockerfile --tag docker.pkg.github.com/taiwolkit/tsdip-api/tsdip-api:${GITHUB_REF#refs/tags/}-$GITHUB_SHA
       - name: publish docker image to Github package registry
-        run: docker push docker.pkg.github.com/taiwolkit/tsdip-api/tsdip-api:$GITHUB_SHA
+        run: docker push docker.pkg.github.com/taiwolkit/tsdip-api/tsdip-api:${GITHUB_REF#refs/tags/}-$GITHUB_SHA
