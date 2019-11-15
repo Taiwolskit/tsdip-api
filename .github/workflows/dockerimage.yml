@@ -10,7 +10,7 @@ jobs:
       - name: Login Docker
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: docker login docker.pkg.github.com -u USERNAME -p GITHUB_TOKEN
+        run: docker login docker.pkg.github.com -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
       - name: Build the Docker image
         run: docker build . --file Dockerfile --tag docker.pkg.github.com/taiwolkit/tsdip-api/tsdip-api:$GITHUB_SHA
       - name: publish docker image to Github package registry
