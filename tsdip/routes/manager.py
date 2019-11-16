@@ -4,6 +4,7 @@ from flask import Blueprint
 from flask import current_app as app
 from flask import g, request
 from marshmallow import Schema, ValidationError, fields
+from sqlalchemy import or_
 
 from tsdip.formatter import format_response
 from tsdip.models import Manager, RequestLog
@@ -33,10 +34,19 @@ def create():
         }
 
     data = request.get_json()
-    username, email = data['username'], data['email']
+    email, username = data['email'], data['username']
     telephone = data['telephone'] if 'telephone' in data else None
 
     try:
+        exist_manager = g.db_session.query(Manager).filter(
+            or_(
+                Manager.email == email,
+                Manager.username == username
+            )
+        ).one_or_none()
+        if exist_manager:
+            raise Exception('Username or email has been used')
+
         manager = Manager(
             username=username,
             email=email,
