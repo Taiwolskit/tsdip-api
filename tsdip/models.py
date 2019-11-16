@@ -6,7 +6,6 @@ from tsdip import db
 
 
 class Base():
-    """ """
     id = db.Column(
         UUID(as_uuid=True),
         primary_key=True,
@@ -41,6 +40,23 @@ class Social(Base, db.Model):
     @validates('email', 'fan_page', 'instagram', 'line', 'telephone', 'website', 'youtube')
     def convert_lower(self, key, value):
         return value.lower()
+
+
+class RequestLog(Base, db.Model):
+    request = db.Column(
+        ENUM('studio', 'event', 'manager', name='request_type'),
+        nullable=False,
+        server_default='event'
+    )
+    request_id = db.Column(UUID(as_uuid=True), nullable=False)
+    approve = db.Column(db.Boolean, nullable=False, server_default='False')
+    approve_at = db.Column(TIMESTAMP)
+
+    approve_by = db.Column(
+        UUID(as_uuid=True),
+        db.ForeignKey('manager.id', onupdate='CASCADE', ondelete='CASCADE')
+    )
+    approver = db.relationship('Manager', uselist=False)
 
 
 permission = db.Table(
@@ -119,7 +135,7 @@ class Event(Base, db.Model):
 
     name = db.Column(db.String(255), nullable=False, unique=True)
     description = db.Column(db.Text)
-    amount = db.Column(db.Integer, nullable=False, server_default='1')
+    amount = db.Column(db.Integer, nullable=False, server_default='0')
     price = db.Column(db.Integer, nullable=False, server_default='0')
     reg_link = db.Column(db.String(128), unique=True)
     reg_start_at = db.Column(TIMESTAMP)
