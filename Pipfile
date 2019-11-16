@@ -4,22 +4,22 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-nose = "*"
-mypy = "*"
-pylama = "*"
-flake8 = "*"
-pycodestyle = "*"
-bandit = "*"
-pydocstyle = "*"
 autopep8 = "*"
+bandit = "*"
+flake8 = "*"
+mypy = "*"
+nose = "*"
+pycodestyle = "*"
+pydocstyle = "*"
+pylama = "*"
 
 [packages]
 flask = "*"
-flask-sqlalchemy = "*"
 flask-migrate = "*"
+flask-sqlalchemy = "*"
+marshmallow = "*"
 psycopg2-binary = "*"
 python-dotenv = "*"
-marshmallow = "*"
 
 [requires]
 python_version = "3.7"
