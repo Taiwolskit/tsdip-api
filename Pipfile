@@ -20,6 +20,7 @@ flask-sqlalchemy = "*"
 marshmallow = "*"
 psycopg2-binary = "*"
 python-dotenv = "*"
+sendgrid = "*"
 
 [requires]
 python_version = "3.7"

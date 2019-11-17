@@ -7,6 +7,7 @@ class Config():
     TESTING = False
     FLASK_APP = os.getenv('FLASK_APP', 'flasky.py')
     FLASK_ENV = os.getenv('FLASK_ENV', 'development')
+    SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
     SQLALCHEMY_DATABASE_URI = os.getenv(
         'SQLALCHEMY_DATABASE_URI',
         'postgresql://tsdip:tsdip@tsdip-pg:5432/tsdip'
@@ -19,6 +20,7 @@ class Config():
         'pool_size': 10,
     }
     SQLALCHEMY_TRACK_MODIFICATIONS = True
+    SYSTEM_SENDER = os.getenv('SYSTEM_SENDER')
 
 
 class ProductionConfig(Config):
