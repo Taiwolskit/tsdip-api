@@ -24,6 +24,10 @@ class Base():
     )
     deleted_at = db.Column(TIMESTAMP)
 
+    def update(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
     def as_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 

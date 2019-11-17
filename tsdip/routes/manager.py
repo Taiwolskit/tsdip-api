@@ -46,7 +46,7 @@ def create():
             )
         ).one_or_none()
         if exist_manager:
-            raise Exception('Username or email has been used')
+            raise Exception('Username or email had been used')
 
         manager = Manager(
             username=username,
@@ -120,7 +120,7 @@ def invite(studio_id):
             )
         ).one_or_none()
         if exist_manager:
-            raise Exception('Username or email has been used')
+            raise Exception('Username or email had been used')
 
         manager = Manager(
             username=username,
@@ -145,6 +145,66 @@ def invite(studio_id):
         mail.send(email)
         return {
             'code': 'ROUTE_MANAGER_2',
+            'http_status_code': HTTPStatus.CREATED,
+            'status': 'SUCCESS',
+        }
+
+
+class ManagerUpdateSchema(Schema):
+    username = fields.Str()
+    email = fields.Str()
+    telephone = fields.Str()
+
+
+@api_blueprint.route('/<path:manager_id>', methods=['PUT'])
+@format_response
+def update(manager_id):
+    try:
+        ManagerUpdateSchema().load(request.get_json())
+    except ValidationError as err:
+        app.logger.error(err.messages)
+        app.logger.error(err.valid_data)
+        return {
+            'code': 'ERROR_MANAGER_5',
+            'description': err.messages,
+            'http_status_code': HTTPStatus.BAD_REQUEST,
+            'status': 'ERROR',
+        }
+
+    try:
+        manager = g.db_session.query(Manager).get(manager_id)
+        if manager is None:
+            raise Exception(f'Manager {manager_id} is not exist')
+    except Exception as err:
+        app.logger.error(err)
+        return {
+            'code': 'ERROR_MANAGER_5',
+            'description': str(err),
+            'http_status_code': HTTPStatus.BAD_REQUEST,
+            'status': 'ERROR',
+        }
+
+    data = request.get_json()
+
+    try:
+        for (key, value) in data.items():
+            setattr(manager, key, value)
+
+        g.db_session.add(manager)
+        g.db_session.commit()
+    except Exception as err:
+        app.logger.error(err)
+        g.db_session.rollback()
+
+        return {
+            'code': 'ERROR_MANAGER_6',
+            'description': str(err),
+            'http_status_code': HTTPStatus.BAD_REQUEST,
+            'status': 'ERROR',
+        }
+    else:
+        return {
+            'code': 'ROUTE_MANAGER_3',
             'http_status_code': HTTPStatus.CREATED,
             'status': 'SUCCESS',
         }

@@ -12,6 +12,8 @@ class ErrorCode(IntEnum):
     ERROR_MANAGER_2 = 102
     ERROR_MANAGER_3 = 103
     ERROR_MANAGER_4 = 104
+    ERROR_MANAGER_5 = 105
+    ERROR_MANAGER_6 = 106
 
     ERROR_STUDIO_1 = 1
     ERROR_STUDIO_2 = 2
@@ -28,6 +30,8 @@ class ErrorMessage(Enum):
     ERROR_MANAGER_2 = 'Create manager API fail'
     ERROR_MANAGER_3 = 'Invite manager API parameters are not valid'
     ERROR_MANAGER_4 = 'Invite manager API fail'
+    ERROR_MANAGER_5 = 'Update manager API parameters are not valid'
+    ERROR_MANAGER_6 = 'Update manager API fail'
 
     ERROR_STUDIO_1 = 'Create studio API parameters are not valid'
     ERROR_STUDIO_2 = 'Create studio fail'
@@ -40,6 +44,7 @@ class ErrorMessage(Enum):
 class SuccessMessage(Enum):
     ROUTE_MANAGER_1 = 'Create a manager, wait for approval'
     ROUTE_MANAGER_2 = 'Invite a manager, wait for activation'
+    ROUTE_MANAGER_3 = 'Update a manager profile success'
 
     ROUTE_AUTH_1 = 'Create studio success'
     ROUTE_AUTH_2 = 'Get studios success'
