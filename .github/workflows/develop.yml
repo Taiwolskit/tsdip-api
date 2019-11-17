@@ -1,0 +1,21 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches:
+      - 'develop'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Login Docker
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRE_TAG: ${GITHUB_REF#refs/tags/}
+        run: docker login docker.pkg.github.com -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+      - name: Build the Docker image
+        run: docker build . --file Dockerfile --tag docker.pkg.github.com/taiwolskit/tsdip-api/tsdip-api:staging-$GITHUB_SHA
+      - name: publish docker image to Github package registry
+        run: docker push docker.pkg.github.com/taiwolskit/tsdip-api/tsdip-api:staging-$GITHUB_SHA

@@ -1,0 +1,35 @@
+version: '3.7'
+services:
+  pg:
+    image: postgres:11-alpine
+    container_name: tsdip-pg
+    environment:
+      - POSTGRES_USER=tsdip
+      - POSTGRES_PASSWORD=tsdip
+      - POSTGRES_DB=tsdip
+    ports:
+      - 5432:5432
+    networks:
+      - tsdip
+    volumes:
+      - tsdip-db:/var/lib/postgresql/data
+
+  api:
+    build: .
+    image: tsdip-api
+    container_name: tsdip-api
+    env_file: .env
+    ports:
+      - 5000:5000
+    networks:
+      - tsdip
+    volumes:
+      - ./:/usr/app
+    depends_on:
+      - pg
+
+networks:
+  tsdip:
+
+volumes:
+  tsdip-db:
