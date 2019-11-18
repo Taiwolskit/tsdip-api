@@ -4,7 +4,6 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-apidoc = "*"
 autopep8 = "*"
 bandit = "*"
 flake8 = "*"
@@ -13,7 +12,6 @@ nose = "*"
 pycodestyle = "*"
 pydocstyle = "*"
 pylama = "*"
-pyyaml = "*"
 
 [packages]
 flask = "*"
