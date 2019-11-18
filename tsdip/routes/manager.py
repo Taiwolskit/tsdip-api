@@ -71,6 +71,7 @@ def create():
         )
         g.db_session.add(manager)
         g.db_session.flush()
+
         req_log = RequestLog(
             request='manager',
             request_id=manager.id
@@ -264,7 +265,7 @@ def update(manager_id):
 class ManagerPermissionSchema(Schema):
     role = fields.Str(
         required=True,
-        validate=validate.OneOf(["break", "manager", "owner", "viewer"])
+        validate=validate.OneOf(['break', 'manager', 'owner', 'viewer'])
     )
     studio_id = fields.UUID(required=True)
 

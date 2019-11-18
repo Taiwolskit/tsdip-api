@@ -122,7 +122,13 @@ class Manager(Base, db.Model):
 
 class Studio(Base, db.Model):
     name = db.Column(db.String(255), nullable=False, unique=True)
+    description = db.Column(db.Text)
     address = db.Column(db.String(255))
+    studio_type = db.Column(
+        ENUM('dance_group', 'studio', name='studio_type'),
+        nullable=False,
+        server_default='studio'
+    )
 
     social_id = db.Column(
         UUID(as_uuid=True),
