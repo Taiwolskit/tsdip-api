@@ -12,4 +12,4 @@ Taiwan Street Dance Information Platform API Server
 
 Change migrations `alembic.ini`
 
-`file_template = %%(year)d_%%(month).2d%%(day).2d%%(hour).2d%%(minute).2d%%(second).2d_%%(rev)s_%%(slug)s`
+`file_template = %%(year)d%%(month).2d%%(day).2d%%(hour).2d%%(minute).2d%%(second).2d_%%(rev)s_%%(slug)s`

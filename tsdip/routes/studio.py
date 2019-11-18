@@ -3,23 +3,42 @@ from http import HTTPStatus
 from flask import Blueprint
 from flask import current_app as app
 from flask import g, request
-from marshmallow import Schema, ValidationError, fields
+from marshmallow import Schema, ValidationError, fields, validate
 
 from tsdip.formatter import format_response
-from tsdip.models import Social, Studio
+from tsdip.models import Social, Studio, RequestLog
 
 api_blueprint = Blueprint('studios', __name__, url_prefix='/studios')
 
 
 class StudioSchema(Schema):
     name = fields.Str(required=True)
-    address = fields.Str(required=True)
+    description = fields.Str()
+    address = fields.Str()
+    studio_type = fields.Str(
+        required=True,
+        validate=validate.OneOf(['dance_group', 'studio'])
+    )
 
 
 @api_blueprint.route('/create', methods=['POST'])
 @format_response
 def create():
-    """ """
+    """
+    **summary** Create a new studio.
+
+    **description**
+    @api {post} /studios/create Create a new studio
+    @apiName CreateStudio
+    @apiGroup Studio
+    @apiDescription The API will create a studio or dance group.
+    It will create a request log that needs to wait for admin approve.
+
+    @apiParam {String} name name need to be unique
+    @apiParam {String} [description] description
+    @apiParam {String} [address] For studio, studio's address
+    @apiParam {String[dance_group,studio]} studio_type dance_group or studio
+    """
     try:
         StudioSchema().load(request.get_json())
     except ValidationError as err:
@@ -33,17 +52,27 @@ def create():
         }
 
     data = request.get_json()
-    name, address = data['name'], data['address']
+    name = data['name']
+    description = data['description']
+    address = data['address']
+    studio_type = data['studio_type']
 
     try:
-        row = Studio(
+        studio = Studio(
             name=name,
-            address=address
+            description=description,
+            address=address,
+            studio_type=studio_type
         )
-        g.db_session.add(row)
+        g.db_session.add(studio)
+        g.db_session.flush()
+
+        req_log = RequestLog(
+            request='studio',
+            request_id=studio.id
+        )
+        g.db_session.add(req_log)
         g.db_session.commit()
-        g.db_session.refresh(row)
-        res = row.as_dict()
     except Exception as err:
         app.logger.error(err)
         g.db_session.rollback()
@@ -51,13 +80,12 @@ def create():
         return {
             'code': 'ERROR_STUDIO_2',
             'description': str(err),
-            'http_status_code': HTTPStatus.BAD_REQUEST,
+            'http_status_code': HTTPStatus.INTERNAL_SERVER_ERROR,
             'status': 'ERROR',
         }
     else:
         return {
-            'code': 'ROUTE_AUTH_1',
-            'data': res,
+            'code': 'ROUTE_STUDIO_1',
             'http_status_code': HTTPStatus.CREATED,
             'status': 'SUCCESS',
         }
@@ -66,6 +94,21 @@ def create():
 @api_blueprint.route('', methods=['GET'])
 @format_response
 def get_list():
+    """
+    **summary** Create a new studio.
+
+    **description**
+    @api {post} /studios/create Create a new studio
+    @apiName CreateStudio
+    @apiGroup Studio
+    @apiDescription The API will create a studio or dance group.
+    It will create a request log that needs to wait for admin approve.
+
+    @apiParam {String} name name need to be unique
+    @apiParam {String} [description] description
+    @apiParam {String} [address] For studio, studio's address
+    @apiParam {String[dance_group,studio]} studio_type dance_group or studio
+    """
     params = request.args.to_dict()
     limit = int(params['limit']) if 'limit' in params and int(
         params['limit']) < 50 else 10
