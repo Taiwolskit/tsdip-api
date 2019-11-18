@@ -48,7 +48,7 @@ class Social(Base, db.Model):
 
 class RequestLog(Base, db.Model):
     request = db.Column(
-        ENUM('studio', 'event', 'manager', name='request_type'),
+        ENUM('event', 'invite', 'manager', 'studio', name='request_type'),
         nullable=False,
         server_default='event'
     )
@@ -80,7 +80,7 @@ permission = db.Table(
     ),
     db.Column(
         'role',
-        ENUM('owner', 'manager', 'viewer', name='permission_role'),
+        ENUM('manager', 'owner', 'viewer', name='permission_role'),
         nullable=False,
         server_default='viewer'
     ),

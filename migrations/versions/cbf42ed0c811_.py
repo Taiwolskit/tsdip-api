@@ -1,7 +1,7 @@
 """empty message
 
 Revision ID: cbf42ed0c811
-Revises: 
+Revises:
 Create Date: 2019-11-16 15:09:41.518088
 
 """
@@ -79,7 +79,7 @@ def upgrade():
     sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('deleted_at', postgresql.TIMESTAMP(), nullable=True),
-    sa.Column('request', postgresql.ENUM('studio', 'event', 'manager', name='request_type'), server_default='event', nullable=False),
+    sa.Column('request', postgresql.ENUM('event', 'invite', 'manager', 'studio', name='request_type'), server_default='event', nullable=False),
     sa.Column('request_id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('approve', sa.Boolean(), server_default='False', nullable=False),
     sa.Column('approve_at', postgresql.TIMESTAMP(), nullable=True),
@@ -102,7 +102,7 @@ def upgrade():
     op.create_table('permission',
     sa.Column('manager_id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('studio_id', postgresql.UUID(as_uuid=True), nullable=False),
-    sa.Column('role', postgresql.ENUM('owner', 'manager', 'viewer', name='permission_role'), server_default='viewer', nullable=False),
+    sa.Column('role', postgresql.ENUM('manager', 'owner', 'viewer', name='permission_role'), server_default='viewer', nullable=False),
     sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('deleted_at', postgresql.TIMESTAMP(), nullable=True),
