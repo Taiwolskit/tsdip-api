@@ -40,7 +40,7 @@ class ErrorMessage(Enum):
     ERROR_STUDIO_1 = """Create studio API parameters are not valid"""
     ERROR_STUDIO_2 = """Create studio fail"""
     ERROR_STUDIO_3 = """Get studios fail"""
-    ERROR_STUDIO_4 = """Patch social to studio API parameters are not valid"""
+    ERROR_STUDIO_4 = """Update studio API parameters are not valid"""
     ERROR_STUDIO_5 = """Studio is not exist"""
     ERROR_STUDIO_6 = """Patch social to studio fail"""
 
@@ -52,6 +52,8 @@ class SuccessMessage(Enum):
     ROUTE_MANAGER_4 = """Update a manager's permission success"""
 
     ROUTE_STUDIO_1 = """Create studio success"""
+    ROUTE_STUDIO_2 = """Get studios success"""
+    ROUTE_STUDIO_3 = """Update a studio success"""
 
 
 class ResponseStatus(Enum):
