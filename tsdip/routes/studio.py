@@ -6,7 +6,7 @@ from flask import g, request
 from marshmallow import Schema, ValidationError, fields, validate
 
 from tsdip.formatter import format_response
-from tsdip.models import Social, Studio, RequestLog
+from tsdip.models import RequestLog, Social, Studio
 
 api_blueprint = Blueprint('studios', __name__, url_prefix='/studios')
 
@@ -95,29 +95,32 @@ def create():
 @format_response
 def get_list():
     """
-    **summary** Create a new studio.
+    **summary** Get studio list.
 
     **description**
-    @api {post} /studios/create Create a new studio
-    @apiName CreateStudio
+    @api {post} /studios/create Get studio list
+    @apiName GetStudio
     @apiGroup Studio
-    @apiDescription The API will create a studio or dance group.
-    It will create a request log that needs to wait for admin approve.
+    @apiDescription The API will query all studios
 
-    @apiParam {String} name name need to be unique
-    @apiParam {String} [description] description
-    @apiParam {String} [address] For studio, studio's address
-    @apiParam {String[dance_group,studio]} studio_type dance_group or studio
+    @apiParam {Number{0-50}} [limit=10] limit of data rows
+    @apiParam {Number{1..}} [page=1] which page start to query
+    @apiParam {String[dance_group,studio]} [studio_type=studio] dance_group or studio
     """
     params = request.args.to_dict()
     limit = int(params['limit']) if 'limit' in params and int(
-        params['limit']) < 50 else 10
+        params['limit']) < 50 and int(
+        params['limit']) < 1 else 10
     page = int(params['page']) if 'page' in params and int(
-        params['page']) != 0 else 1
+        params['page']) < 1 else 1
+    studio_type = params['studio_type'] if 'studio_type' in params else 'studio'
 
     try:
         data = g.db_session.query(Studio) \
-            .filter(Studio.deleted_at.is_(None)) \
+            .filter(
+                Studio.deleted_at.is_(None),
+                Studio.studio_type == studio_type
+        ) \
             .order_by(Studio.name.desc()) \
             .paginate(page=page, per_page=limit)
 
@@ -135,14 +138,19 @@ def get_list():
         }
     else:
         return {
-            'code': 'ROUTE_AUTH_2',
+            'code': 'ROUTE_STUDIO_2',
             'data': result,
             'http_status_code': HTTPStatus.OK,
             'status': 'SUCCESS',
         }
 
 
-class SocialSchema(Schema):
+class StudioUpdateSchema(Schema):
+    name = fields.Str()
+    description = fields.Str()
+    address = fields.Str()
+    studio_type = fields.Str(
+        validate=validate.OneOf(['dance_group', 'studio']))
     email = fields.Email()
     fan_page = fields.Str()
     instagram = fields.Str()
@@ -152,11 +160,32 @@ class SocialSchema(Schema):
     youtube = fields.Str()
 
 
-@api_blueprint.route('/<path:studio_id>', methods=['PATCH'])
+@api_blueprint.route('/<path:studio_id>', methods=['PUT'])
 @format_response
-def patch_social(studio_id):
+def update(studio_id):
+    """
+    **summary** Update the studio.
+
+    **description**
+    @api {put} /studios/:studio_id Update the studio
+    @apiName UpdateStudio
+    @apiGroup Studio
+    @apiDescription The API will update the studio or dance group which
+    includes social data. If it haven't have social data it will create new one.
+
+    @apiParam {String} [name] need to be unique
+    @apiParam {String} [description] description about studio or dance group
+    @apiParam {String} [address] For studio, studio's address
+    @apiParam {String} [email] social data
+    @apiParam {String} [fan_page] social data
+    @apiParam {String} [instagram] social data
+    @apiParam {String} [line] social data
+    @apiParam {String} [telephone] social data
+    @apiParam {String} [website] social data
+    @apiParam {String} [youtube] social data
+    """
     try:
-        SocialSchema().load(request.get_json())
+        StudioUpdateSchema().load(request.get_json())
     except ValidationError as err:
         app.logger.error(err.messages)
         app.logger.error(err.valid_data)
@@ -179,21 +208,24 @@ def patch_social(studio_id):
                 'status': 'ERROR',
             }
 
-        row = Social(
-            email=(data['email'] if 'email' in data else None),
-            fan_page=(data['fan_page'] if 'fan_page' in data else None),
-            instagram=(data['instagram'] if 'instagram' in data else None),
-            line=(data['line'] if 'line' in data else None),
-            telephone=(data['telephone'] if 'telephone' in data else None),
-            website=(data['website'] if 'website' in data else None),
-            youtube=(data['youtube'] if 'youtube' in data else None),
-        )
-        g.db_session.add(row)
+        social = studio.social if studio.social else Social()
+
+        for (key, value) in data.items():
+            # studio
+            if key in ('name', 'description'):
+                setattr(studio, key, value)
+            # social
+            elif key in ('email', 'fan_page', 'instagram', 'line', 'telephone', 'website', 'youtube'):
+                setattr(social, key, value)
+            elif key == 'address' and studio.studio_type == 'studio':
+                setattr(studio, key, value)
+
+        g.db_session.add(social)
         g.db_session.flush()
-        studio.social_id = row.id
+        studio.social_id = social.id
         g.db_session.add(studio)
         g.db_session.commit()
-        res = row.as_dict()
+        res = studio.as_dict()
     except Exception as err:
         app.logger.error(err)
         g.db_session.rollback()
@@ -206,7 +238,7 @@ def patch_social(studio_id):
         }
     else:
         return {
-            'code': 'ROUTE_AUTH_3',
+            'code': 'ROUTE_STUDIO_3',
             'data': res,
             'http_status_code': HTTPStatus.CREATED,
             'status': 'SUCCESS',
