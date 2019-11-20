@@ -135,6 +135,7 @@ class Studio(Base, db.Model):
         db.ForeignKey('social.id', onupdate='CASCADE', ondelete='CASCADE')
     )
     social = db.relationship('Social', uselist=False)
+    events = db.relationship('Event', lazy=True)
 
 
 class Event(Base, db.Model):
@@ -153,6 +154,11 @@ class Event(Base, db.Model):
     start_at = db.Column(TIMESTAMP)
     end_at = db.Column(TIMESTAMP)
 
+    studio_id = db.Column(
+        UUID(as_uuid=True),
+        db.ForeignKey('studio.id', onupdate='CASCADE', ondelete='CASCADE')
+    )
+    studio = db.relationship('Studio', uselist=False)
     social_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey('social.id', onupdate='CASCADE', ondelete='CASCADE')

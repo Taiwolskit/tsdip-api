@@ -23,6 +23,8 @@ class ErrorCode(IntEnum):
     ERROR_STUDIO_4 = 204
     ERROR_STUDIO_5 = 205
     ERROR_STUDIO_6 = 206
+    ERROR_STUDIO_7 = 207
+    ERROR_STUDIO_8 = 208
 
 
 class ErrorMessage(Enum):
@@ -42,18 +44,21 @@ class ErrorMessage(Enum):
     ERROR_STUDIO_3 = """Get studios fail"""
     ERROR_STUDIO_4 = """Update studio API parameters are not valid"""
     ERROR_STUDIO_5 = """Studio is not exist"""
-    ERROR_STUDIO_6 = """Patch social to studio fail"""
+    ERROR_STUDIO_6 = """Update studio API fail"""
+    ERROR_STUDIO_7 = """Delete studio API parameters are not valid"""
+    ERROR_STUDIO_8 = """Delete studio API fail"""
 
 
 class SuccessMessage(Enum):
-    ROUTE_MANAGER_1 = """Create a manager, wait for approval"""
-    ROUTE_MANAGER_2 = """Invite a manager, wait for activation"""
-    ROUTE_MANAGER_3 = """Update a manager profile success"""
-    ROUTE_MANAGER_4 = """Update a manager's permission success"""
+    ROUTE_MANAGER_1 = """Create the manager, wait for approval"""
+    ROUTE_MANAGER_2 = """Invite the manager, wait for activation"""
+    ROUTE_MANAGER_3 = """Update the manager profile success"""
+    ROUTE_MANAGER_4 = """Update the manager's permission success"""
 
-    ROUTE_STUDIO_1 = """Create studio success"""
+    ROUTE_STUDIO_1 = """Create ths studio success"""
     ROUTE_STUDIO_2 = """Get studios success"""
-    ROUTE_STUDIO_3 = """Update a studio success"""
+    ROUTE_STUDIO_3 = """Update ths studio success"""
+    ROUTE_STUDIO_4 = """Delete the studio success"""
 
 
 class ResponseStatus(Enum):
