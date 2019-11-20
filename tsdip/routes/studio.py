@@ -1,3 +1,4 @@
+from datetime import datetime
 from http import HTTPStatus
 
 from flask import Blueprint
@@ -233,13 +234,62 @@ def update(studio_id):
         return {
             'code': 'ERROR_STUDIO_6',
             'description': str(err),
-            'http_status_code': HTTPStatus.BAD_REQUEST,
+            'http_status_code': HTTPStatus.INTERNAL_SERVER_ERROR,
             'status': 'ERROR',
         }
     else:
         return {
             'code': 'ROUTE_STUDIO_3',
             'data': res,
-            'http_status_code': HTTPStatus.CREATED,
+            'http_status_code': HTTPStatus.OK,
+            'status': 'SUCCESS',
+        }
+
+
+@api_blueprint.route('/<path:studio_id>', methods=['DELETE'])
+@format_response
+def delete(studio_id):
+    """
+    **summary** Delete the studio.
+
+    **description**
+    @api {put} /studios/:studio_id Delete the studio
+    @apiName DeleteStudio
+    @apiGroup Studio
+    @apiDescription The API will delete the studio or dance group.
+    It also will delete all events which is created by this studio or dance group.
+    """
+    try:
+        studio = g.db_session.query(Studio).get(studio_id)
+
+        if not studio:
+            return {
+                'code': 'ERROR_STUDIO_7',
+                'http_status_code': HTTPStatus.BAD_REQUEST,
+                'status': 'ERROR',
+            }
+
+        app.logger.debug(f'studio {studio.events}')
+
+        for event in studio.events:
+            event.deleted_at = datetime.utcnow()
+            g.db_session.add(event)
+        studio.deleted_at = datetime.utcnow()
+        g.db_session.add(studio)
+        g.db_session.commit()
+    except Exception as err:
+        app.logger.error(err)
+        g.db_session.rollback()
+
+        return {
+            'code': 'ERROR_STUDIO_8',
+            'description': str(err),
+            'http_status_code': HTTPStatus.INTERNAL_SERVER_ERROR,
+            'status': 'ERROR',
+        }
+    else:
+        return {
+            'code': 'ROUTE_STUDIO_4',
+            'http_status_code': HTTPStatus.OK,
             'status': 'SUCCESS',
         }
