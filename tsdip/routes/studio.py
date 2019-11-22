@@ -146,19 +146,24 @@ def get_list():
         }
 
 
+class SocialSchema(Schema):
+    email = fields.Email()
+    fan_page = fields.URL()
+    instagram = fields.Str()
+    line = fields.Str()
+    telephone = fields.Str()
+    website = fields.URL()
+    youtube = fields.URL()
+
+
 class StudioUpdateSchema(Schema):
     name = fields.Str()
     description = fields.Str()
     address = fields.Str()
     studio_type = fields.Str(
         validate=validate.OneOf(['dance_group', 'studio']))
-    email = fields.Email()
-    fan_page = fields.Str()
-    instagram = fields.Str()
-    line = fields.Str()
-    telephone = fields.Str()
-    website = fields.URL()
-    youtube = fields.Str()
+
+    social = fields.Nested(SocialSchema)
 
 
 @api_blueprint.route('/<path:studio_id>', methods=['PUT'])
@@ -177,13 +182,13 @@ def update(studio_id):
     @apiParam {String} [name] need to be unique
     @apiParam {String} [description] description about studio or dance group
     @apiParam {String} [address] For studio, studio's address
-    @apiParam {String} [email] social data
-    @apiParam {String} [fan_page] social data
-    @apiParam {String} [instagram] social data
-    @apiParam {String} [line] social data
-    @apiParam {String} [telephone] social data
-    @apiParam {String} [website] social data
-    @apiParam {String} [youtube] social data
+    @apiParam {String} [social.email] social data
+    @apiParam {String} [social.fan_page] social data
+    @apiParam {String} [social.instagram] social data
+    @apiParam {String} [social.line] social data
+    @apiParam {String} [social.telephone] social data
+    @apiParam {String} [social.website] social data
+    @apiParam {String} [social.youtube] social data
     """
     try:
         StudioUpdateSchema().load(request.get_json())
@@ -202,7 +207,7 @@ def update(studio_id):
     try:
         studio = g.db_session.query(Studio).get(studio_id)
 
-        if not studio:
+        if not studio or studio.deleted_at:
             return {
                 'code': 'ERROR_STUDIO_5',
                 'http_status_code': HTTPStatus.BAD_REQUEST,
@@ -210,20 +215,27 @@ def update(studio_id):
             }
 
         social = studio.social if studio.social else Social()
+        have_social = False
 
         for (key, value) in data.items():
             # studio
             if key in ('name', 'description'):
                 setattr(studio, key, value)
-            # social
-            elif key in ('email', 'fan_page', 'instagram', 'line', 'telephone', 'website', 'youtube'):
-                setattr(social, key, value)
             elif key == 'address' and studio.studio_type == 'studio':
                 setattr(studio, key, value)
+            # social
+            elif key == 'social':
+                for (social_key, social_value) in value.items():
+                    if social_key in ('email', 'fan_page', 'instagram', 'line', 'telephone',
+                                      'website', 'youtube'):
+                        have_social = True
+                        setattr(social, social_key, social_value)
 
-        g.db_session.add(social)
-        g.db_session.flush()
-        studio.social_id = social.id
+        if have_social:
+            g.db_session.add(social)
+            g.db_session.flush()
+            studio.social_id = social.id
+
         g.db_session.add(studio)
         g.db_session.commit()
         res = studio.as_dict()
@@ -262,18 +274,17 @@ def delete(studio_id):
     try:
         studio = g.db_session.query(Studio).get(studio_id)
 
-        if not studio:
+        if not studio or studio.deleted_at:
             return {
                 'code': 'ERROR_STUDIO_7',
                 'http_status_code': HTTPStatus.BAD_REQUEST,
                 'status': 'ERROR',
             }
 
-        app.logger.debug(f'studio {studio.events}')
-
         for event in studio.events:
             event.deleted_at = datetime.utcnow()
             g.db_session.add(event)
+
         studio.deleted_at = datetime.utcnow()
         g.db_session.add(studio)
         g.db_session.commit()

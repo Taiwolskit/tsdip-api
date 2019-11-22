@@ -62,12 +62,16 @@ def create():
             )
         ).one_or_none()
         if exist_manager:
-            raise Exception('Username or email had been used')
+            return {
+                'code': 'ERROR_MANAGER_2',
+                'http_status_code': HTTPStatus.BAD_REQUEST,
+                'status': 'ERROR',
+            }
 
         manager = Manager(
-            username=username,
             email=email,
-            telephone=telephone
+            telephone=telephone,
+            username=username,
         )
         g.db_session.add(manager)
         g.db_session.flush()
@@ -83,7 +87,7 @@ def create():
         g.db_session.rollback()
 
         return {
-            'code': 'ERROR_MANAGER_2',
+            'code': 'ERROR_MANAGER_3',
             'description': str(err),
             'http_status_code': HTTPStatus.INTERNAL_SERVER_ERROR,
             'status': 'ERROR',
@@ -121,21 +125,8 @@ def invite(studio_id):
         app.logger.error(err.messages)
         app.logger.error(err.valid_data)
         return {
-            'code': 'ERROR_MANAGER_3',
+            'code': 'ERROR_MANAGER_4',
             'description': err.messages,
-            'http_status_code': HTTPStatus.BAD_REQUEST,
-            'status': 'ERROR',
-        }
-
-    try:
-        studio = g.db_session.query(Studio).get(studio_id)
-        if not studio:
-            raise Exception(f'Studio {studio_id} is not exist')
-    except Exception as err:
-        app.logger.error(err)
-        return {
-            'code': 'ERROR_MANAGER_3',
-            'description': str(err),
             'http_status_code': HTTPStatus.BAD_REQUEST,
             'status': 'ERROR',
         }
@@ -146,9 +137,18 @@ def invite(studio_id):
     telephone = data['telephone'] if 'telephone' in data else None
 
     try:
+        studio = g.db_session.query(Studio).get(studio_id)
+        if not studio or studio.deleted_at:
+            return {
+                'code': 'ERROR_MANAGER_5',
+                'http_status_code': HTTPStatus.BAD_REQUEST,
+                'status': 'ERROR',
+            }
+
         manager = g.db_session.query(Manager).filter(
+            Manager.deleted_at.is_(None),
             Manager.email == email,
-            Manager.username == username
+            Manager.username == username,
         ).one_or_none()
 
         if manager:
@@ -174,7 +174,7 @@ def invite(studio_id):
         g.db_session.rollback()
 
         return {
-            'code': 'ERROR_MANAGER_4',
+            'code': 'ERROR_MANAGER_6',
             'description': str(err),
             'http_status_code': HTTPStatus.INTERNAL_SERVER_ERROR,
             'status': 'ERROR',
@@ -217,21 +217,8 @@ def update(manager_id):
         app.logger.error(err.messages)
         app.logger.error(err.valid_data)
         return {
-            'code': 'ERROR_MANAGER_5',
+            'code': 'ERROR_MANAGER_7',
             'description': err.messages,
-            'http_status_code': HTTPStatus.BAD_REQUEST,
-            'status': 'ERROR',
-        }
-
-    try:
-        manager = g.db_session.query(Manager).get(manager_id)
-        if not manager:
-            raise Exception(f'Manager {manager_id} is not exist')
-    except Exception as err:
-        app.logger.error(err)
-        return {
-            'code': 'ERROR_MANAGER_5',
-            'description': str(err),
             'http_status_code': HTTPStatus.BAD_REQUEST,
             'status': 'ERROR',
         }
@@ -239,6 +226,14 @@ def update(manager_id):
     data = request.get_json()
 
     try:
+        manager = g.db_session.query(Manager).get(manager_id)
+        if not manager or manager.deleted_at:
+            return {
+                'code': 'ERROR_MANAGER_8',
+                'http_status_code': HTTPStatus.BAD_REQUEST,
+                'status': 'ERROR',
+            }
+
         for (key, value) in data.items():
             setattr(manager, key, value)
 
@@ -249,7 +244,7 @@ def update(manager_id):
         g.db_session.rollback()
 
         return {
-            'code': 'ERROR_MANAGER_6',
+            'code': 'ERROR_MANAGER_9',
             'description': str(err),
             'http_status_code': HTTPStatus.INTERNAL_SERVER_ERROR,
             'status': 'ERROR',
@@ -294,7 +289,7 @@ def update_permission(manager_id):
         app.logger.error(err.messages)
         app.logger.error(err.valid_data)
         return {
-            'code': 'ERROR_MANAGER_7',
+            'code': 'ERROR_MANAGER_10',
             'description': err.messages,
             'http_status_code': HTTPStatus.BAD_REQUEST,
             'status': 'ERROR',
@@ -305,22 +300,21 @@ def update_permission(manager_id):
 
     try:
         manager = g.db_session.query(Manager).get(manager_id)
-        if not manager:
-            raise Exception(f'Manager {manager_id} is not exist')
+        if not manager and manager.deleted_at:
+            return {
+                'code': 'ERROR_MANAGER_11',
+                'http_status_code': HTTPStatus.BAD_REQUEST,
+                'status': 'ERROR',
+            }
 
         studio = g.db_session.query(Studio).get(studio_id)
-        if not studio:
-            raise Exception(f'Studio {studio_id} is not exist')
-    except Exception as err:
-        app.logger.error(err)
-        return {
-            'code': 'ERROR_MANAGER_7',
-            'description': str(err),
-            'http_status_code': HTTPStatus.BAD_REQUEST,
-            'status': 'ERROR',
-        }
+        if not studio and studio.deleted_at:
+            return {
+                'code': 'ERROR_MANAGER_12',
+                'http_status_code': HTTPStatus.BAD_REQUEST,
+                'status': 'ERROR',
+            }
 
-    try:
         if role == 'break':
             manager.studios.remove(studio)
         else:
@@ -341,7 +335,7 @@ def update_permission(manager_id):
     except Exception as err:
         app.logger.error(err)
         return {
-            'code': 'ERROR_MANAGER_8',
+            'code': 'ERROR_MANAGER_13',
             'description': str(err),
             'http_status_code': HTTPStatus.INTERNAL_SERVER_ERROR,
             'status': 'ERROR',
