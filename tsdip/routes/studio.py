@@ -5,6 +5,7 @@ from flask import Blueprint
 from flask import current_app as app
 from flask import g, request
 from marshmallow import Schema, ValidationError, fields, validate
+from sqlalchemy.sql.expression import true
 
 from tsdip.formatter import format_response
 from tsdip.models import RequestLog, Social, Studio
@@ -117,10 +118,16 @@ def get_list():
     studio_type = params['studio_type'] if 'studio_type' in params else 'studio'
 
     try:
-        data = g.db_session.query(Studio) \
+        data = g.db_session.query(Studio).join(
+            RequestLog,
+            RequestLog.request_id == Studio.id,
+        ) \
             .filter(
+                RequestLog.approve == true(),
+                RequestLog.approve_at.isnot(None),
+                RequestLog.request == 'studio',
                 Studio.deleted_at.is_(None),
-                Studio.studio_type == studio_type
+                Studio.studio_type == studio_type,
         ) \
             .order_by(Studio.name.desc()) \
             .paginate(page=page, per_page=limit)
