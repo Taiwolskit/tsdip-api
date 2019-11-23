@@ -34,6 +34,11 @@ class ErrorCode(IntEnum):
     ERROR_EVENT_1 = 301
     ERROR_EVENT_2 = 302
     ERROR_EVENT_3 = 303
+    ERROR_EVENT_4 = 304
+    ERROR_EVENT_5 = 305
+    ERROR_EVENT_6 = 306
+    ERROR_EVENT_7 = 307
+    ERROR_EVENT_8 = 308
 
 
 class ErrorMessage(Enum):
@@ -65,6 +70,11 @@ class ErrorMessage(Enum):
     ERROR_EVENT_1 = """Create Event API parameters are not valid"""
     ERROR_EVENT_2 = """Create Event API Studio is not exist"""
     ERROR_EVENT_3 = """Create Event API fail"""
+    ERROR_EVENT_4 = """Update Event API parameters are not valid"""
+    ERROR_EVENT_5 = """Update Event API Event is not exist"""
+    ERROR_EVENT_6 = """Update Event API fail"""
+    ERROR_EVENT_7 = """Delete Event API, event is not exist"""
+    ERROR_EVENT_8 = """Delete Event API fail"""
 
 
 class SuccessMessage(Enum):
@@ -78,7 +88,9 @@ class SuccessMessage(Enum):
     ROUTE_STUDIO_3 = """Update ths studio success"""
     ROUTE_STUDIO_4 = """Delete the studio success"""
 
-    ROUTE_EVENT_1 = """Create Event success, wait for admin approval"""
+    ROUTE_EVENT_1 = """Create the event success, wait for admin approval"""
+    ROUTE_EVENT_2 = """Update the event success"""
+    ROUTE_EVENT_2 = """Delete the event success"""
 
 
 class ResponseStatus(Enum):
