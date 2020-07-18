@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: tsdip-api
+          image: tsdip-api:1.14.2
+          ports:
+            - name: api-port
+              containerPort: 5000
+          envFrom:
+            - configMapRef:
+                name: cm-env
+            - secretRef:
+                name: secret-env
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
