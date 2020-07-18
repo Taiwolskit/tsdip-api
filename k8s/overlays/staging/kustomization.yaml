@@ -15,3 +15,8 @@ secretGenerator:
     type: Opaque
     envs:
       - .env
+
+images:
+  - name: tsdip-api
+    newTag: demo
+    newName: asia-east1-docker.pkg.dev/tsdip-dev/tsdip-api/tsdip-api

@@ -8,7 +8,7 @@ spec:
     spec:
       containers:
         - name: tsdip-api
-          image: tsdip-api:1.14.2
+          image: tsdip-api:latest
           ports:
             - name: api-port
               containerPort: 5000
@@ -24,3 +24,8 @@ spec:
             limits:
               memory: "128Mi"
               cpu: "500m"
+      tolerations:
+        - key: "sandbox.gke.io/runtime"
+          operator: "Equal"
+          value: "gvisor"
+          effect: "NoSchedule"
