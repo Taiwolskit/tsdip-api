@@ -1,6 +1,12 @@
 import os
 
 from flask import Flask, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import MetaData
+
+metadata = MetaData()
+db = SQLAlchemy(metadata=metadata)
+
 
 def create_app(config=None):
     app = Flask(__name__, instance_relative_config=True)
