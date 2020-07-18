@@ -8,4 +8,5 @@ resources:
 configMapGenerator:
   - name: cm-env
     literals:
+      - FLASK_APP=flasky.py
       - FLASK_ENV=production

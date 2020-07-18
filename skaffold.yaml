@@ -13,11 +13,10 @@ build:
 deploy:
   kustomize:
     paths:
-      - k8s/base
+      - k8s/overlays/staging
 
-profiles:
-  - name: staging
-    deploy:
-      kustomize:
-        paths:
-          - k8s/overlays/staging
+portForward:
+  - resourceType: deployment
+    resourceName: tsdip-api-deploy
+    port: 5000
+    localPort: 5000
