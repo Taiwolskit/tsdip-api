@@ -90,7 +90,7 @@ class SuccessMessage(Enum):
 
     ROUTE_EVENT_1 = """Create the event success, wait for admin approval"""
     ROUTE_EVENT_2 = """Update the event success"""
-    ROUTE_EVENT_2 = """Delete the event success"""
+    ROUTE_EVENT_3 = """Delete the event success"""
 
 
 class ResponseStatus(Enum):
