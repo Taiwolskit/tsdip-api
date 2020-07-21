@@ -3,14 +3,86 @@ from http import HTTPStatus
 from flask import Blueprint
 from flask import current_app as app
 from flask import g, request
-from marshmallow import Schema, ValidationError, fields, validate
+from marshmallow import ValidationError
 from sqlalchemy import or_
 
 from tsdip.formatter import format_response
-from tsdip.mail import SendGrid
 from tsdip.models import Manager
+from tsdip.schema.manager import ManagerSignUpSchema
 
 api_blueprint = Blueprint('managers', __name__, url_prefix='/managers')
+
+
+class ManagerExist(Exception):
+    def __init__(self, comment="manager_exist"):
+        if comment == "manager_exist":
+            self.message = "Manager have been exist"
+        elif comment == 'manager_data_used':
+            self.message = "Manager's data have been used"
+        else:
+            self.message = "Manage exist exception comment empty"
+        super().__init__(self.message)
+
+
+@api_blueprint.route('/signup', methods=['POST'])
+@format_response
+def sign_up():
+    # step1: API TOKEN 有效性
+    try:
+        data = request.get_json()
+        ManagerSignUpSchema.load(data)
+        managers = g.db_session.query(Manager).filter(
+            or_(
+                Manager.username == data['username'],
+                Manager.email == data['email']
+            )
+        ).first()
+
+        if len(managers) > 0:
+            raise ManagerExist('manager_data_used')
+
+        manager = Manager(
+            username=data['username'],
+            email=data['email']
+        )
+
+        if 'telephone' in data:
+            check_tel_manager = g.db_session.query(Manager).filter_by(
+                telephone=data['telephone']).first()
+
+            if check_tel_manager:
+                raise ManagerExist('manager_data_used')
+
+            manager.telephone = data['telephone']
+
+        g.db_session.add(manager)
+        g.db_session.commit()
+    except ValidationError as err:
+        app.logger.error(err.messages)
+        app.logger.error(err.valid_data)
+
+        return {
+            'code': 'WARN_MANAGER_SCHEMA',
+            'description': err.messages,
+            'http_status_code': HTTPStatus.BAD_REQUEST,
+            'status': 'WARN',
+        }
+    except Exception as err:
+        app.logger.error(err)
+        g.db_session.rollback()
+
+        return {
+            'code': 'ERROR_MANAGER_SIGNUP',
+            'description': str(err),
+            'http_status_code': HTTPStatus.INTERNAL_SERVER_ERROR,
+            'status': 'ERROR',
+        }
+    else:
+        return {
+            'code': 'SUCCESS_MANAGER_SIGNUP',
+            'http_status_code': HTTPStatus.CREATED,
+            'status': 'SUCCESS',
+        }
 
 
 # class ManagerSchema(Schema):
