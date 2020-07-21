@@ -172,7 +172,7 @@ class User(db.Model, Base):
 
     roles = db.relationship('UserRole', secondary=user_role, lazy='dynamic')
 
-    @validates('email')
+    @validates('email', 'username')
     def convert_lower(self, key, value):
         return value.lower()
 
@@ -241,6 +241,6 @@ class Manager(db.Model, Base):
     email = db.Column(db.String(255), nullable=False, unique=True)
     telephone = db.Column(db.String(20), unique=True)
 
-    @validates('email')
+    @validates('email', 'username')
     def convert_lower(self, key, value):
         return value.lower()
