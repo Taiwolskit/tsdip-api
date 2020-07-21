@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+bases:
+  - ../../base
+
+namePrefix: tsdip-api-
+
+commonLabels:
+  project: tsdip
+  app: api
+
+secretGenerator:
+  - name: secret-env
+    type: Opaque
+    envs:
+      - .env
+
+images:
+  - name: tsdip-api
+    newTag: demo
+    newName: asia-east1-docker.pkg.dev/tsdip-dev/tsdip-api/tsdip-api

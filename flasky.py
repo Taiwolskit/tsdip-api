@@ -17,7 +17,6 @@ if os.getenv('FLASK_ENV') == 'production':
 app = create_app(config=config)
 migrate = Migrate(app, db)
 
-
 if app.config['DEBUG']:
     import logging
     app.logger.setLevel(logging.DEBUG)
