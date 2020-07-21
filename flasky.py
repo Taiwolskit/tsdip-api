@@ -7,7 +7,7 @@ from flask import g, request
 from flask.cli import with_appcontext
 from flask_migrate import Migrate
 
-from tsdip import create_app
+from tsdip import create_app, db
 
 load_dotenv()
 config = 'config.DevelopmentConfig'
@@ -15,6 +15,7 @@ if os.getenv('FLASK_ENV') == 'production':
     config = 'config.ProductionConfig'
 
 app = create_app(config=config)
+migrate = Migrate(app, db)
 
 if app.config['DEBUG']:
     import logging
@@ -27,6 +28,7 @@ def before_request():
     app.logger.debug('before_request')
     app.logger.debug(f'Headers: {request.headers}')
     app.logger.debug(f'Body: {request.get_data()}')
+    g.db_session = db.session
 
 
 @app.after_request
@@ -52,3 +54,20 @@ def handle_exception(e):
     })
     response.content_type = "application/json"
     return response
+
+
+def init_db():
+    """ """
+    db.drop_all()
+    db.create_all()
+
+
+@click.command('init-db')
+@with_appcontext
+def init_db_command():
+    """Clear existing data and create new tables."""
+    init_db()
+    click.echo('Initialized the database.')
+
+
+app.cli.add_command(init_db_command)
