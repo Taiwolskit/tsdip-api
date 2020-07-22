@@ -1,7 +1,7 @@
 """empty message
 
 Revision ID: 8b54bb3fc4c5
-Revises: 
+Revises:
 Create Date: 2020-07-22 05:19:53.735675
 
 """
@@ -116,7 +116,7 @@ def upgrade():
     sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('deleted_at', postgresql.TIMESTAMP(), nullable=True),
-    sa.Column('req_type', postgresql.ENUM('invite_member', 'remove_member', name='req_member_type'), server_default='invite_member', nullable=False),
+    sa.Column('req_type', postgresql.ENUM('invite_member', 'invite_exist_member', 'remove_member', name='req_member_type'), server_default='invite_member', nullable=False),
     sa.Column('email', sa.String(length=255), nullable=True),
     sa.Column('org_id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('inviter_id', postgresql.UUID(as_uuid=True), nullable=False),

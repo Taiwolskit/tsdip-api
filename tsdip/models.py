@@ -268,7 +268,8 @@ class RequestMemberLog(db.Model, Base):
     """ORM RequestMemberLog model."""
 
     req_type = db.Column(
-        ENUM('invite_member', 'remove_member', name='req_member_type'),
+        ENUM('invite_member', 'invite_exist_member',
+             'remove_member', name='req_member_type'),
         nullable=False,
         server_default='invite_member'
     )

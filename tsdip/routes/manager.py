@@ -1,9 +1,6 @@
 from http import HTTPStatus
 
-from flask import Blueprint
-from flask import current_app as app
-from flask import g, request
-from marshmallow import ValidationError
+from flask import Blueprint, g, request
 from sqlalchemy import or_
 
 from tsdip.auth import validate_api_token
@@ -37,7 +34,7 @@ def sign_up():
     ManagerSignUpSchema().load(data)
 
     email, username = data['email'].lower(), data['username'].lower()
-    telephone = data['telephone'] if 'telephone' in data else None
+    telephone = data.get('telephone', None)
     exist_manager = g.db_session.query(Manager).filter(
         or_(
             Manager.email == email,
@@ -59,9 +56,7 @@ def sign_up():
         telephone=telephone,
         username=username,
     )
-
     g.db_session.add(manager)
-    
     g.db_session.commit()
 
     return {

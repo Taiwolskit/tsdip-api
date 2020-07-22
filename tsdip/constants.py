@@ -10,13 +10,10 @@ class EmailTemplate(Enum):
 class ErrorCode(IntEnum):
     """Response error code list."""
 
-    DEFAULT_ERROR = '001'
-    PARAM_SCHEMA_WARN = '002'
-    API_FAILED = '003'
-    AUTH_API_TOKEN_ERROR = '004'
-
-    MANAGER_API_FAILED = 101
-    USER_API_FAILED = 201
+    DEFAULT_ERROR = 100
+    PARAM_SCHEMA_WARN = 101
+    API_FAILED = 102
+    AUTH_API_TOKEN_ERROR = 103
 
     @classmethod
     def _missing_(cls, value):
@@ -31,9 +28,6 @@ class ErrorMessage(Enum):
     API_FAILED = 'API process failed'
     AUTH_API_TOKEN_ERROR = 'API token is invalid'
 
-    MANAGER_API_FAILED = 'The manager API process failed'
-    USER_API_FAILED = 'The user API process failed'
-
     @classmethod
     def _missing_(cls, value):
         return cls[value] if value in cls._member_names_ else ErrorMessage.DEFAULT_ERROR
@@ -45,6 +39,8 @@ class SuccessMessage(Enum):
     API_SUCCESS = 'API success'
     MANAGER_API_SUCCESS = 'The manager API success'
     USER_API_SUCCESS = 'The user API success'
+    ORG_API_SUCCESS = 'The organization API success'
+    EVENT_API_SUCCESS = 'The event API success'
 
     @classmethod
     def _missing_(cls, value):
