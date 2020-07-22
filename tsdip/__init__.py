@@ -17,17 +17,15 @@ def create_app(config=None):
     db.init_app(app)
     JWTManager(app)
 
-    # from .routes.event import api_blueprint as event_blueprint
+    from .routes.event import api_blueprint as event_blueprint
     from .routes.manager import api_blueprint as manager_blueprint
-    from .routes.user import api_blueprint as user_blueprint
     from .routes.org import api_blueprint as org_blueprint
-    # from .routes.studio import api_blueprint as studio_blueprint
+    from .routes.user import api_blueprint as user_blueprint
 
-    # app.register_blueprint(event_blueprint)
+    app.register_blueprint(event_blueprint)
     app.register_blueprint(manager_blueprint)
-    app.register_blueprint(user_blueprint)
     app.register_blueprint(org_blueprint)
-    # app.register_blueprint(studio_blueprint)
+    app.register_blueprint(user_blueprint)
 
     @app.route('/hello')
     def hello_world():
