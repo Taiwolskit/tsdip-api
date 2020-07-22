@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: d47b5ad0b615
+Revision ID: 8b54bb3fc4c5
 Revises: 
-Create Date: 2020-07-21 09:01:48.060084
+Create Date: 2020-07-22 05:19:53.735675
 
 """
 import sqlalchemy as sa
@@ -10,7 +10,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = 'd47b5ad0b615'
+revision = '8b54bb3fc4c5'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -87,19 +87,6 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name')
     )
-    op.create_table('request_member_log',
-    sa.Column('id', postgresql.UUID(as_uuid=True), server_default=sa.text('uuid_generate_v4()'), nullable=False),
-    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
-    sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
-    sa.Column('deleted_at', postgresql.TIMESTAMP(), nullable=True),
-    sa.Column('req_type', sa.String(length=255), nullable=False),
-    sa.Column('inviter_id', postgresql.UUID(as_uuid=True), nullable=True),
-    sa.Column('invitee_id', postgresql.UUID(as_uuid=True), nullable=True),
-    sa.Column('invited_at', postgresql.TIMESTAMP(), nullable=True),
-    sa.ForeignKeyConstraint(['invitee_id'], ['user.id'], onupdate='CASCADE', ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['inviter_id'], ['user.id'], onupdate='CASCADE', ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id')
-    )
     op.create_table('event',
     sa.Column('id', postgresql.UUID(as_uuid=True), server_default=sa.text('uuid_generate_v4()'), nullable=False),
     sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
@@ -114,7 +101,7 @@ def upgrade():
     sa.Column('reg_end_at', postgresql.TIMESTAMP(), nullable=True),
     sa.Column('start_at', postgresql.TIMESTAMP(), nullable=True),
     sa.Column('end_at', postgresql.TIMESTAMP(), nullable=True),
-    sa.Column('org_id', postgresql.UUID(as_uuid=True), nullable=True),
+    sa.Column('org_id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('social_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.CheckConstraint('amount > -1'),
     sa.CheckConstraint('price > -1'),
@@ -124,14 +111,30 @@ def upgrade():
     sa.UniqueConstraint('name'),
     sa.UniqueConstraint('reg_link')
     )
+    op.create_table('request_member_log',
+    sa.Column('id', postgresql.UUID(as_uuid=True), server_default=sa.text('uuid_generate_v4()'), nullable=False),
+    sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
+    sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
+    sa.Column('deleted_at', postgresql.TIMESTAMP(), nullable=True),
+    sa.Column('req_type', postgresql.ENUM('invite_member', 'remove_member', name='req_member_type'), server_default='invite_member', nullable=False),
+    sa.Column('email', sa.String(length=255), nullable=True),
+    sa.Column('org_id', postgresql.UUID(as_uuid=True), nullable=False),
+    sa.Column('inviter_id', postgresql.UUID(as_uuid=True), nullable=False),
+    sa.Column('invitee_id', postgresql.UUID(as_uuid=True), nullable=True),
+    sa.Column('accepted_at', postgresql.TIMESTAMP(), nullable=True),
+    sa.ForeignKeyConstraint(['invitee_id'], ['user.id'], onupdate='CASCADE', ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['inviter_id'], ['user.id'], onupdate='CASCADE', ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['org_id'], ['organization.id'], onupdate='CASCADE', ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('request_org_log',
     sa.Column('id', postgresql.UUID(as_uuid=True), server_default=sa.text('uuid_generate_v4()'), nullable=False),
     sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('deleted_at', postgresql.TIMESTAMP(), nullable=True),
-    sa.Column('req_type', sa.String(length=255), nullable=False),
-    sa.Column('org_id', postgresql.UUID(as_uuid=True), nullable=True),
-    sa.Column('applicant_id', postgresql.UUID(as_uuid=True), nullable=True),
+    sa.Column('req_type', postgresql.ENUM('apply_org', 'claim_org', name='req_org_type'), server_default='apply_org', nullable=False),
+    sa.Column('org_id', postgresql.UUID(as_uuid=True), nullable=False),
+    sa.Column('applicant_id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('approver_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('approve_at', postgresql.TIMESTAMP(), nullable=True),
     sa.ForeignKeyConstraint(['applicant_id'], ['user.id'], onupdate='CASCADE', ondelete='CASCADE'),
@@ -145,8 +148,8 @@ def upgrade():
     sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('deleted_at', postgresql.TIMESTAMP(), nullable=True),
     sa.Column('name', postgresql.ENUM('owner', 'manager', 'viewer', name='role_name'), server_default='viewer', nullable=False),
-    sa.Column('org_id', postgresql.UUID(as_uuid=True), nullable=True),
-    sa.Column('permission_id', postgresql.UUID(as_uuid=True), nullable=True),
+    sa.Column('org_id', postgresql.UUID(as_uuid=True), nullable=False),
+    sa.Column('permission_id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.ForeignKeyConstraint(['org_id'], ['organization.id'], onupdate='CASCADE', ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['permission_id'], ['permission.id'], onupdate='CASCADE', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
@@ -157,9 +160,9 @@ def upgrade():
     sa.Column('created_at', postgresql.TIMESTAMP(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('updated_at', postgresql.TIMESTAMP(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('deleted_at', postgresql.TIMESTAMP(), nullable=True),
-    sa.Column('req_type', sa.String(length=255), nullable=False),
-    sa.Column('event_id', postgresql.UUID(as_uuid=True), nullable=True),
-    sa.Column('applicant_id', postgresql.UUID(as_uuid=True), nullable=True),
+    sa.Column('req_type', postgresql.ENUM('apply_event', 'publish_event', 'unpublish_event', name='req_event_type'), server_default='apply_event', nullable=False),
+    sa.Column('event_id', postgresql.UUID(as_uuid=True), nullable=False),
+    sa.Column('applicant_id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('approver_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('approve_at', postgresql.TIMESTAMP(), nullable=True),
     sa.ForeignKeyConstraint(['applicant_id'], ['user.id'], onupdate='CASCADE', ondelete='CASCADE'),
@@ -186,8 +189,8 @@ def downgrade():
     op.drop_table('request_event_log')
     op.drop_table('role')
     op.drop_table('request_org_log')
-    op.drop_table('event')
     op.drop_table('request_member_log')
+    op.drop_table('event')
     op.drop_table('organization')
     op.drop_table('user')
     op.drop_table('social')
@@ -195,4 +198,7 @@ def downgrade():
     op.drop_table('manager')
     op.execute("DROP TYPE org_type")
     op.execute("DROP TYPE role_name")
+    op.execute("DROP TYPE req_org_type")
+    op.execute("DROP TYPE req_event_type")
+    op.execute("DROP TYPE req_member_type")
     # ### end Alembic commands ###

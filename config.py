@@ -2,11 +2,15 @@ import os
 
 
 class Config():
-    """ """
+    """Default Config Structure."""
+
     DEBUG = False
     TESTING = False
     FLASK_APP = os.getenv('FLASK_APP', 'flasky.py')
     FLASK_ENV = os.getenv('FLASK_ENV', 'development')
+    JSON_AS_ASCII = False
+    JWT_ACCESS_TOKEN_EXPIRES = 24 * 60 * 60
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'secretkey')
     SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
     SQLALCHEMY_DATABASE_URI = os.getenv(
         'SQLALCHEMY_DATABASE_URI',
@@ -24,16 +28,19 @@ class Config():
 
 
 class ProductionConfig(Config):
-    """ """
+    """Production Config Value."""
+
     SQLALCHEMY_ECHO = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 
 class DevelopmentConfig(Config):
-    """ """
+    """Development Config Value."""
+
     DEBUG = True
 
 
 class TestingConfig(Config):
-    """ """
+    """Testing Config Value."""
+
     TESTING = True

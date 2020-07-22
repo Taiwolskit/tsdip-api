@@ -15,12 +15,15 @@ pylama = "*"
 
 [packages]
 flask = "*"
-flask-migrate = "*"
-flask-sqlalchemy = "*"
+Flask-JWT-Extended = "*"
+Flask-Migrate = "*"
+Flask-SQLAlchemy = "*"
+gevent = "*"
 marshmallow = "*"
 psycopg2-binary = "*"
 python-dotenv = "*"
 sendgrid = "*"
+uWSGI = "*"
 
 [requires]
 python_version = "3.8"
