@@ -11,8 +11,8 @@ from tsdip.schema.manager import ManagerSignUpSchema
 api_blueprint = Blueprint('managers', __name__, url_prefix='/managers')
 
 
-class ManagerExistException(Exception):
-    """Manager exist exception."""
+class ManagerException(Exception):
+    """Manager exception."""
 
     def __init__(self, comment="manager_exist"):
         """Exception constructor."""
@@ -21,7 +21,7 @@ class ManagerExistException(Exception):
         elif comment == 'manager_data_used':
             self.message = "Manager's data have been used"
         else:
-            self.message = "Manager exist exception comment empty"
+            self.message = "Manager exception comment empty"
         super().__init__(self.message)
 
 
@@ -43,13 +43,13 @@ def sign_up():
     ).one_or_none()
 
     if exist_manager:
-        raise ManagerExistException('manager_data_used')
+        raise ManagerException('manager_data_used')
     if telephone:
         check_tel_manager = g.db_session.query(Manager).filter_by(
             telephone=telephone).one_or_none()
 
         if check_tel_manager:
-            raise ManagerExistException('manager_data_used')
+            raise ManagerException('manager_data_used')
 
     manager = Manager(
         email=email,
