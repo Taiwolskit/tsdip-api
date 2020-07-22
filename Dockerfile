@@ -1,10 +1,10 @@
-FROM python:alpine
+FROM python:slim
 WORKDIR /usr/app
-RUN apk add --no-cache --virtual .build-deps build-base musl-dev postgresql-dev && \
-    apk add --no-cache --virtual .run-deps postgresql-libs && \
+RUN apt-get update -y && \
+    apt-get install -y gcc && \
     pip3 install pipenv==v2020.6.2
 COPY Pipfile Pipfile.lock ./
-RUN pipenv install --system --deploy && \
-    apk del --no-cache .build-deps
+RUN pipenv lock -r > requirements.txt && \
+    pip3 install -r requirements.txt
 COPY . .
-ENTRYPOINT [ "flask", "run", "--host=0.0.0.0" ]
+CMD ["uwsgi", "--ini", "app.ini", "--py-autoreload", "1"]

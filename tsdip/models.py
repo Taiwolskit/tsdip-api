@@ -5,8 +5,13 @@ from sqlalchemy.sql import expression
 
 from tsdip import db
 
+ORG_FOREKEY_FIELD = 'organization.id'
+USER_FOREKEY_FIELD = 'user.id'
+
 
 class Base():
+    """ORM model base structure."""
+
     id = db.Column(
         UUID(as_uuid=True),
         primary_key=True,
@@ -26,10 +31,12 @@ class Base():
     deleted_at = db.Column(TIMESTAMP)
 
     def update(self, **kwargs):
+        """ORM model base update function."""
         for key, value in kwargs.items():
             setattr(self, key, value)
 
     def as_dict(self, filter_at=False):
+        """ORM model base convert object to dict function."""
         temp = {c.name: getattr(self, c.name) for c in self.__table__.columns}
         if filter_at:
             del temp['created_at']
@@ -40,6 +47,8 @@ class Base():
 
 
 class Social(db.Model, Base):
+    """ORM Social model."""
+
     email = db.Column(db.String(255), unique=True)
     fan_page = db.Column(db.String(255), unique=True)
     instagram = db.Column(db.String(255), unique=True)
@@ -50,10 +59,13 @@ class Social(db.Model, Base):
 
     @validates('email', 'fan_page', 'instagram', 'line', 'telephone', 'website', 'youtube')
     def convert_lower(self, key, value):
+        """Convert field to lower case."""
         return value.lower()
 
 
 class Event(db.Model, Base):
+    """ORM Event model."""
+
     __table_args__ = (
         CheckConstraint('amount > -1'),
         CheckConstraint('price > -1'),
@@ -71,18 +83,22 @@ class Event(db.Model, Base):
 
     org_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('organization.id', onupdate='CASCADE',
-                      ondelete='CASCADE')
+        db.ForeignKey(ORG_FOREKEY_FIELD, onupdate='CASCADE',
+                      ondelete='CASCADE'),
+        nullable=False
     )
-    ogr = db.relationship('Organization', uselist=False)
     social_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey('social.id', onupdate='CASCADE', ondelete='CASCADE')
     )
+
+    org = db.relationship('Organization', uselist=False)
     social = db.relationship('Social', uselist=False)
 
 
 class Organization(db.Model, Base):
+    """ORM Organization model."""
+
     name = db.Column(db.String(255), nullable=False, unique=True)
     description = db.Column(db.Text)
     address = db.Column(db.String(255))
@@ -91,21 +107,25 @@ class Organization(db.Model, Base):
         nullable=False,
         server_default='studio'
     )
-
     social_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey('social.id', onupdate='CASCADE', ondelete='CASCADE')
     )
+
     social = db.relationship('Social', uselist=False)
     events = db.relationship('Event', lazy=True)
 
 
 class Permission(db.Model, Base):
+    """ORM Permission model."""
+
     could_invite = db.Column(db.Boolean, nullable=False,
                              server_default=expression.false())
 
 
 class Role(db.Model, Base):
+    """ORM Role model."""
+
     __table_args__ = (
         db.UniqueConstraint('org_id', 'permission_id',
                             name='uq_role_org_id_permission_id'),
@@ -118,12 +138,14 @@ class Role(db.Model, Base):
     )
     org_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('organization.id', onupdate='CASCADE',
-                      ondelete='CASCADE')
+        db.ForeignKey(ORG_FOREKEY_FIELD, onupdate='CASCADE',
+                      ondelete='CASCADE'),
+        nullable=False
     )
     permission_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('permission.id', onupdate='CASCADE', ondelete='CASCADE')
+        db.ForeignKey('permission.id', onupdate='CASCADE', ondelete='CASCADE'),
+        nullable=False
     )
 
     org = db.relationship('Organization', uselist=False)
@@ -136,7 +158,8 @@ user_role = db.Table(
     db.Column(
         'user_id',
         UUID(as_uuid=True),
-        db.ForeignKey('user.id', onupdate='CASCADE', ondelete='CASCADE'),
+        db.ForeignKey(USER_FOREKEY_FIELD, onupdate='CASCADE',
+                      ondelete='CASCADE'),
         primary_key=True
     ),
     db.Column(
@@ -166,27 +189,39 @@ user_role = db.Table(
 
 
 class User(db.Model, Base):
+    """ORM User model."""
+
     username = db.Column(db.String(255), nullable=False, unique=True)
     email = db.Column(db.String(255), nullable=False, unique=True)
     telephone = db.Column(db.String(20), unique=True)
 
-    roles = db.relationship('UserRole', secondary=user_role, lazy='dynamic')
+    roles = db.relationship('Role', secondary=user_role, lazy='dynamic')
 
     @validates('email', 'username')
     def convert_lower(self, key, value):
+        """Convert field to lower case."""
         return value.lower()
 
 
 class RequestOrgLog(db.Model, Base):
-    req_type = db.Column(db.String(255), nullable=False)
+    """ORM RequestOrgLog model."""
+
+    req_type = db.Column(
+        ENUM('apply_org', 'claim_org', name='req_org_type'),
+        nullable=False,
+        server_default='apply_org'
+    )
     org_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('organization.id', onupdate='CASCADE',
-                      ondelete='CASCADE')
+        db.ForeignKey(ORG_FOREKEY_FIELD, onupdate='CASCADE',
+                      ondelete='CASCADE'),
+        nullable=False
     )
     applicant_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('user.id', onupdate='CASCADE', ondelete='CASCADE')
+        db.ForeignKey(USER_FOREKEY_FIELD,
+                      onupdate='CASCADE', ondelete='CASCADE'),
+        nullable=False
     )
     approver_id = db.Column(
         UUID(as_uuid=True),
@@ -200,14 +235,23 @@ class RequestOrgLog(db.Model, Base):
 
 
 class RequestEventLog(db.Model, Base):
-    req_type = db.Column(db.String(255), nullable=False)
+    """ORM RequestEventLog model."""
+
+    req_type = db.Column(
+        ENUM('apply_event', 'publish_event', 'unpublish_event', name='req_event_type'),
+        nullable=False,
+        server_default='apply_event'
+    )
     event_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('event.id', onupdate='CASCADE', ondelete='CASCADE')
+        db.ForeignKey('event.id', onupdate='CASCADE', ondelete='CASCADE'),
+        nullable=False
     )
     applicant_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('user.id', onupdate='CASCADE', ondelete='CASCADE')
+        db.ForeignKey(USER_FOREKEY_FIELD,
+                      onupdate='CASCADE', ondelete='CASCADE'),
+        nullable=False
     )
     approver_id = db.Column(
         UUID(as_uuid=True),
@@ -221,26 +265,53 @@ class RequestEventLog(db.Model, Base):
 
 
 class RequestMemberLog(db.Model, Base):
-    req_type = db.Column(db.String(255), nullable=False)
+    """ORM RequestMemberLog model."""
+
+    req_type = db.Column(
+        ENUM('invite_member', 'remove_member', name='req_member_type'),
+        nullable=False,
+        server_default='invite_member'
+    )
+    email = db.Column(db.String(255))
+    org_id = db.Column(
+        UUID(as_uuid=True),
+        db.ForeignKey(ORG_FOREKEY_FIELD, onupdate='CASCADE',
+                      ondelete='CASCADE'),
+        nullable=False
+    )
     inviter_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('user.id', onupdate='CASCADE', ondelete='CASCADE')
+        db.ForeignKey(USER_FOREKEY_FIELD,
+                      onupdate='CASCADE', ondelete='CASCADE'),
+        nullable=False
     )
     invitee_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('user.id', onupdate='CASCADE', ondelete='CASCADE')
+        db.ForeignKey(USER_FOREKEY_FIELD,
+                      onupdate='CASCADE', ondelete='CASCADE')
     )
-    invited_at = db.Column(TIMESTAMP)
+    accepted_at = db.Column(TIMESTAMP)
 
-    inviter = db.relationship('User', uselist=False)
-    invitee = db.relationship('User', uselist=False)
+    org = db.relationship('Organization', uselist=False)
+    inviter = db.relationship('User', uselist=False, foreign_keys=inviter_id)
+    invitee = db.relationship('User', uselist=False, foreign_keys=invitee_id)
+
+    @validates('email')
+    def convert_lower(self, key, value):
+        """Convert field to lower case."""
+        return value.lower()
 
 
 class Manager(db.Model, Base):
+    """ORM Manager model."""
+
+    __tablename__ = 'manager'
+
     username = db.Column(db.String(255), nullable=False, unique=True)
     email = db.Column(db.String(255), nullable=False, unique=True)
     telephone = db.Column(db.String(20), unique=True)
 
     @validates('email', 'username')
     def convert_lower(self, key, value):
+        """Convert field to lower case."""
         return value.lower()
