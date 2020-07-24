@@ -94,6 +94,7 @@ class Event(db.Model, Base):
 
     org = db.relationship('Organization', uselist=False)
     social = db.relationship('Social', uselist=False)
+    requests = db.relationship('RequestEventLog', lazy=True)
 
 
 class Organization(db.Model, Base):
@@ -114,6 +115,7 @@ class Organization(db.Model, Base):
 
     social = db.relationship('Social', uselist=False)
     events = db.relationship('Event', lazy=True)
+    requests = db.relationship('RequestOrgLog', lazy=True)
 
 
 class Permission(db.Model, Base):
@@ -196,6 +198,12 @@ class User(db.Model, Base):
     telephone = db.Column(db.String(20), unique=True)
 
     roles = db.relationship('Role', secondary=user_role, lazy='dynamic')
+    orgRequests = db.relationship('RequestOrgLog', lazy=True)
+    eventRequests = db.relationship('RequestEventLog', lazy=True)
+    inviteRequests = db.relationship(
+        'RequestMemberLog', lazy=True, foreign_keys='RequestMemberLog.inviter_id')
+    inviteeRequests = db.relationship(
+        'RequestMemberLog', lazy=True, foreign_keys='RequestMemberLog.invitee_id')
 
     @validates('email', 'username')
     def convert_lower(self, key, value):
@@ -238,7 +246,8 @@ class RequestEventLog(db.Model, Base):
     """ORM RequestEventLog model."""
 
     req_type = db.Column(
-        ENUM('apply_event', 'publish_event', 'unpublish_event', name='req_event_type'),
+        ENUM('apply_event', 'publish_event',
+             'unpublish_event', name='req_event_type'),
         nullable=False,
         server_default='apply_event'
     )
