@@ -1,4 +1,4 @@
-from marshmallow import Schema, ValidationError, fields, validates_schema
+from marshmallow import Schema, fields
 
 
 class UserSignUpSchema(Schema):
@@ -9,14 +9,9 @@ class UserSignUpSchema(Schema):
     username = fields.Str(required=True)
 
 
-class InviteMemberSchema(Schema):
-    """POST:invite_member."""
+class UserProfileSchema(Schema):
+    """PUT:update_profile."""
 
     email = fields.Email()
-    user_id = fields.Str()
-
-    @validates_schema
-    def validate_filed(self, data, **kwargs):
-        """Customize validation function."""
-        if 'email' not in data and 'user_id' not in data:
-            raise ValidationError('At least one fields: email or user_id')
+    telephone = fields.Str()
+    username = fields.Str()

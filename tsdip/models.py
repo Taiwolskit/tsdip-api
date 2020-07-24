@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy import CheckConstraint, func, text
 from sqlalchemy.dialects.postgresql import ENUM, TIMESTAMP, UUID
 from sqlalchemy.orm import validates
@@ -33,12 +35,17 @@ class Base():
     def update(self, **kwargs):
         """ORM model base update function."""
         for key, value in kwargs.items():
-            setattr(self, key, value)
+            if '_at' in key:
+                convert_time = datetime.utcfromtimestamp(int(value) * 1e-3)
+                setattr(self, key, convert_time)
+            else:
+                setattr(self, key, value)
 
     def as_dict(self, filter_at=False):
         """ORM model base convert object to dict function."""
         temp = {c.name: getattr(self, c.name) for c in self.__table__.columns}
         if filter_at:
+            del temp['id']
             del temp['created_at']
             del temp['updated_at']
             del temp['deleted_at']

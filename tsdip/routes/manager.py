@@ -25,6 +25,30 @@ class ManagerException(Exception):
         super().__init__(self.message)
 
 
+def check_manager_data_used(data):
+    """Check email, username and telephone have been used or not."""
+    email = data.get('email', None)
+    username = data.get('username', None)
+    telephone = data.get('telephone', None)
+
+    or_select = []
+    if email:
+        email = email.lower()
+        or_select.append(Manager.email == email)
+    if username:
+        username = username.lower()
+        or_select.append(Manager.username == username)
+    if telephone:
+        or_select.append(Manager.telephone == telephone)
+
+    exist_user = g.db_session.query(Manager).filter(
+        or_(*or_select)
+    ).one_or_none()
+
+    if exist_user:
+        raise ManagerException('manager_data_used')
+
+
 @api_blueprint.route('/sign_up', methods=['POST'])
 @format_response
 @validate_api_token
@@ -32,24 +56,9 @@ def sign_up():
     """Sign up a manager."""
     data = request.get_json()
     ManagerSignUpSchema().load(data)
-
+    check_manager_data_used(data)
     email, username = data['email'].lower(), data['username'].lower()
     telephone = data.get('telephone', None)
-    exist_manager = g.db_session.query(Manager).filter(
-        or_(
-            Manager.email == email,
-            Manager.username == username,
-        )
-    ).one_or_none()
-
-    if exist_manager:
-        raise ManagerException('manager_data_used')
-    if telephone:
-        check_tel_manager = g.db_session.query(Manager).filter_by(
-            telephone=telephone).one_or_none()
-
-        if check_tel_manager:
-            raise ManagerException('manager_data_used')
 
     manager = Manager(
         email=email,
