@@ -14,11 +14,9 @@ api_blueprint = Blueprint('managers', __name__, url_prefix='/managers')
 class ManagerException(Exception):
     """Manager exception."""
 
-    def __init__(self, comment="manager_exist"):
+    def __init__(self, comment):
         """Exception constructor."""
-        if comment == "manager_exist":
-            self.message = "Manager have been exist"
-        elif comment == 'manager_data_used':
+        if comment == 'manager_data_used':
             self.message = "Manager's data have been used"
         else:
             self.message = "Manager exception comment empty"

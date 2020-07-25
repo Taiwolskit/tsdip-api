@@ -1,9 +1,10 @@
 from http import HTTPStatus
 
 from flask import Blueprint, g, request
-from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_jwt_extended import jwt_required
 from sqlalchemy import or_
 
+from tsdip.auth import check_jwt_user_exist
 from tsdip.formatter import format_response
 from tsdip.models import User
 from tsdip.schema.user import UserProfileSchema, UserSignUpSchema
@@ -11,15 +12,13 @@ from tsdip.schema.user import UserProfileSchema, UserSignUpSchema
 api_blueprint = Blueprint('users', __name__, url_prefix='/users')
 
 
-class UserExistException(Exception):
+class UserException(Exception):
     """User exist exception."""
 
-    def __init__(self, comment="user_exist"):
+    def __init__(self, comment):
         """Exception constructor."""
         if comment == 'user_data_used':
             self.message = "User's data have been used"
-        elif comment == 'user_not_exist':
-            self.message = "User is not exist"
         else:
             self.message = "User exist exception comment empty"
         super().__init__(self.message)
@@ -46,7 +45,7 @@ def check_user_data_used(data):
     ).one_or_none()
 
     if exist_user:
-        raise UserExistException('user_data_used')
+        raise UserException('user_data_used')
 
 
 @api_blueprint.route('/sign_up', methods=['POST'])
@@ -88,17 +87,13 @@ def log_in():
 @api_blueprint.route('/profile', methods=['PUT'])
 @format_response
 @jwt_required
+@check_jwt_user_exist
 def update_profile():
     """Update user's profile."""
     data = request.get_json()
     UserProfileSchema().load(data)
-
-    current_user = get_jwt_identity()
     check_user_data_used(data)
-
-    current_user = g.db_session.query(User).get(current_user['id'])
-    if not current_user or current_user.deleted_at:
-        raise UserExistException('user_not_exist')
+    current_user = g.current_user
 
     for key, value in data.items():
         setattr(current_user, key, value)
@@ -114,15 +109,14 @@ def update_profile():
 @api_blueprint.route('/profile', methods=['GET'])
 @format_response
 @jwt_required
+@check_jwt_user_exist
 def get_profile():
     """Get user's profile."""
-    current_user = get_jwt_identity()
-    current_user = g.db_session.query(User).get(current_user['id'])
-    profile = current_user.as_dict(filter_at=True)
+    result = g.current_user.as_dict(filter_at=True)
 
     return {
         'code': 'USER_API_SUCCESS',
-        'data': profile,
+        'data': result,
         'http_status_code': HTTPStatus.OK,
         'status': 'SUCCESS',
     }

@@ -14,6 +14,7 @@ class ErrorCode(IntEnum):
     PARAM_SCHEMA_WARN = 101
     API_FAILED = 102
     AUTH_API_TOKEN_ERROR = 103
+    JWT_USER_NOT_EXIST = 104
 
     @classmethod
     def _missing_(cls, value):
@@ -27,6 +28,7 @@ class ErrorMessage(Enum):
     PARAM_SCHEMA_WARN = """The API's parameters are invalid"""
     API_FAILED = 'API process failed'
     AUTH_API_TOKEN_ERROR = 'API token is invalid'
+    JWT_USER_NOT_EXIST = 'Token is invalid, user is not exist'
 
     @classmethod
     def _missing_(cls, value):
