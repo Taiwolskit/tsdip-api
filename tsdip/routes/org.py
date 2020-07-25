@@ -105,15 +105,14 @@ def create_org():
         g.db_session.flush()
         org.social_id = social.id
 
-    req_log = RequestOrgLog(
-        req_type='apply_org',
-        org_id=org.id
-    )
-
     if current_user['type'] != 'manager':
+        req_log = RequestOrgLog(
+            req_type='apply_org',
+            org_id=org.id
+        )
         req_log.applicant_id = current_user['id']
+        g.db_session.add(req_log)
 
-    g.db_session.add(req_log)
     g.db_session.commit()
 
     return {
