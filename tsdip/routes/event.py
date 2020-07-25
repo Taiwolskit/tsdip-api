@@ -26,7 +26,7 @@ def get_single_event(event_id):
     """Get single event detail with social."""
     event = g.db_session.query(Event).filter(
         Event.id == event_id,
-        Event.deleted_at.isnot(None)
+        Event.deleted_at.is_(None)
     ).one_or_none()
     if event is None:
         raise EventException('event_not_exist')

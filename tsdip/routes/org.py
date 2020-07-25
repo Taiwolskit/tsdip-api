@@ -24,6 +24,8 @@ class OrganizationException(Exception):
         """Exception constructor."""
         if comment == "organization_not_exist":
             self.message = "Organization is not exist"
+        elif comment == "organization_not_approve":
+            self.message = "Organization is not approved"
         elif comment == 'permission_denied':
             self.message = "Permission denied, user does not have permission to do this action"
         elif comment == 'member_not_exist':
@@ -37,7 +39,7 @@ def check_org_exist(org_id):
     """Check organization exist or not."""
     org = g.db_session.query(Organization).filter(
         Organization.id == org_id,
-        Organization.deleted_at.isnot(None)
+        Organization.deleted_at.is_(None)
     ).one_or_none()
     if org is None:
         raise OrganizationException('organization_not_exist')
@@ -49,23 +51,33 @@ def check_event_exist(org_id, event_id):
     event = g.db_session.query(Event).filter(
         Event.id == event_id,
         Event.org_id == org_id,
-        Event.deleted_at.isnot(None)
+        Event.deleted_at.is_(None)
     ).one_or_none()
     if event is None:
         raise EventException('event_not_exist')
     return event
 
 
-def check_user_permission(current_user, org):
+def check_org_approve(org_id):
+    org = g.db_session.query(RequestOrgLog).filter(
+        RequestOrgLog.req_type.in_('apply_org', 'claim_org'),
+        RequestOrgLog.deleted_at.is_(None),
+        RequestOrgLog.org_id==org_id,
+        RequestOrgLog.approve_at.isnot(None)
+    ).one_or_none()
+    if org is None:
+        raise OrganizationException('organization_not_approve')
+
+
+def check_user_permission(org_id):
     """Check user permission for the organization."""
-    if current_user['type'] != 'manager' and org.claim_at is not None:
-        check_permission = False
-        for role in g.current_user.roles:
-            if role.org_id == org.org_id:
-                check_permission = True
-                break
-        if check_permission is False:
-            raise OrganizationException('permission_denied')
+    check_permission = False
+    for role in g.current_user.roles:
+        if role.org_id == org_id:
+            check_permission = True
+            break
+    if check_permission is False:
+        raise OrganizationException('permission_denied')
 
 
 @api_blueprint.route('/create', methods=['POST'])
@@ -139,7 +151,8 @@ def update_org(org_id):
 
     org = check_org_exist(org_id)
     current_user = get_jwt_identity()
-    check_user_permission(current_user, org)
+    if current_user['type'] != 'manager':
+        check_user_permission(org_id)
 
     address = data.get('address', None)
     description = data.get('description', None)
@@ -178,11 +191,12 @@ def invite_member(org_id):
     InviteMemberSchema().load(data)
 
     # Step 2: Check organization is exist
-    org = check_org_exist(org_id)
+    check_org_exist(org_id)
 
     # Step 3: Check user has permission to invite user to this organization
     current_user = get_jwt_identity()
-    check_user_permission(current_user.roles, org)
+    if current_user['type'] != 'manager':
+        check_user_permission(org_id)
 
     # Step 4: Check invitee user status
     # user_id: Check user exist
@@ -194,7 +208,7 @@ def invite_member(org_id):
     if user_id is None:
         exist_member = g.db_session.query(User).filter(
             User.id == user_id,
-            User.deleted_at.isnot(None)
+            User.deleted_at.is_(None)
         ).one_or_none()
         if exist_member is None:
             raise OrganizationException('member_not_exist')
@@ -241,7 +255,7 @@ def invite_member(org_id):
 class EventException(Exception):
     """Event exception."""
 
-    def __init__(self, comment="permission_denied"):
+    def __init__(self, comment):
         """Exception constructor."""
         if comment == "event_not_exist":
             self.message = "Event is not exist"
@@ -259,9 +273,10 @@ def create_event(org_id):
     data = request.get_json()
     CreateEventSchema().load(data)
 
-    org = check_org_exist(org_id)
+    check_org_exist(org_id)
     current_user = get_jwt_identity()
-    check_user_permission(current_user, org)
+    if current_user['type'] != 'manager':
+        check_user_permission(org_id)
 
     event = Event(org_id=org_id)
     for (key, value) in data.items():
@@ -306,11 +321,12 @@ def update_event(org_id, event_id):
     data = request.get_json()
     UpdateEventSchema().load(data)
 
-    org = check_org_exist(org_id)
+    check_org_exist(org_id)
     event = check_event_exist(org_id, event_id)
 
     current_user = get_jwt_identity()
-    check_user_permission(current_user, org)
+    if current_user['type'] != 'manager':
+        check_user_permission(org_id)
 
     for (key, value) in data.items():
         if key in ('name', 'description', 'amount', 'price', 'address', 'reg_link'):
@@ -346,11 +362,12 @@ def update_event(org_id, event_id):
 @check_jwt_user_exist
 def delete_event(org_id, event_id):
     """Delete event."""
-    org = check_org_exist(org_id)
+    check_org_exist(org_id)
     event = check_event_exist(org_id, event_id)
 
     current_user = get_jwt_identity()
-    check_user_permission(current_user, org)
+    if current_user['type'] != 'manager':
+        check_user_permission(org_id)
 
     event.deleted_at = datetime.utcnow()
     event.social.deleted_at = datetime.utcnow()
