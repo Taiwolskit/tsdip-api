@@ -1,14 +1,18 @@
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, func, text
+from sqlalchemy import CheckConstraint, func, join, select, text
 from sqlalchemy.dialects.postgresql import ENUM, TIMESTAMP, UUID
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import validates
 from sqlalchemy.sql import expression
 
-from tsdip import db
+from tsdip import db, metadata
+from tsdip.view import view
 
 ORG_FOREKEY_FIELD = 'organization.id'
 USER_FOREKEY_FIELD = 'user.id'
+
+ViewBase = declarative_base(metadata=metadata)
 
 
 class Base():
@@ -332,3 +336,10 @@ class Manager(db.Model, Base):
     def convert_lower(self, key, value):
         """Convert field to lower case."""
         return value.lower()
+
+
+class MyStuff(ViewBase):
+    __table__ = view("vw_demo", metadata,
+                     select([User.id.label('id')]).
+                     select_from(join(User, user_role))
+                     )
