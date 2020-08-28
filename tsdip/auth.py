@@ -40,7 +40,7 @@ def check_jwt_user_exist(fn):
         ).one_or_none()
         if query_user is None:
             return {
-                'code': 'JWT_USER_NOT_EXIST',
+                'code': 'JWT_INVALID',
                 'http_status_code': HTTPStatus.FORBIDDEN,
                 'status': 'WARN',
             }
