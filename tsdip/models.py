@@ -77,16 +77,9 @@ class Social(db.Model, Base):
 class Event(db.Model, Base):
     """ORM Event model."""
 
-    __table_args__ = (
-        CheckConstraint('amount > -1'),
-        CheckConstraint('price > -1'),
-    )
-
     name = db.Column(db.String(255), nullable=False, unique=True)
     description = db.Column(db.Text)
-    amount = db.Column(db.Integer, nullable=False, server_default='0')
-    price = db.Column(db.Integer, nullable=False, server_default='0')
-    reg_link = db.Column(db.String(128), unique=True)
+    reg_link = db.Column(db.String(128))
     reg_start_at = db.Column(TIMESTAMP)
     reg_end_at = db.Column(TIMESTAMP)
     start_at = db.Column(TIMESTAMP)
@@ -106,6 +99,30 @@ class Event(db.Model, Base):
     org = db.relationship('Organization', uselist=False)
     social = db.relationship('Social', uselist=False)
     requests = db.relationship('RequestEventLog', lazy=True)
+    tickets = db.relationship('TicketFare', lazy=True)
+
+
+class TicketFare(db.Model, Base):
+    """ORM Ticket Fare model."""
+    __table_args__ = (
+        CheckConstraint('amount > -1'),
+        CheckConstraint('price > -1'),
+    )
+
+    name = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text)
+    amount = db.Column(db.Integer, nullable=False, server_default='0')
+    price = db.Column(db.Integer, nullable=False, server_default='0')
+    reg_link = db.Column(db.String(128))
+    reg_start_at = db.Column(TIMESTAMP)
+    reg_end_at = db.Column(TIMESTAMP)
+
+    event_id = db.Column(
+        UUID(as_uuid=True),
+        db.ForeignKey('event.id', onupdate='CASCADE', ondelete='CASCADE')
+    )
+
+    event = db.relationship('Event', uselist=False)
 
 
 class Organization(db.Model, Base):

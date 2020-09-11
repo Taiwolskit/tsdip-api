@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   pg:
-    image: postgres:11-alpine
+    image: postgres:13-alpine
     container_name: tsdip-pg
     environment:
       - POSTGRES_USER=tsdip
