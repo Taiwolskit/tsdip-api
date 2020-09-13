@@ -14,6 +14,18 @@ class SocialSchema(Schema):
     youtube = fields.URL()
 
 
+class TicketSchema(Schema):
+    """Ticket fare schema."""
+
+    name = fields.Str(required=True)
+    description = fields.Str()
+    amount = fields.Int(required=True, validate=validate.Range(min=0))
+    price = fields.Int(required=True, validate=validate.Range(min=0))
+    reg_link = fields.URL()
+    reg_start_at = fields.TimeDelta()
+    reg_end_at = fields.TimeDelta()
+
+
 class CreateOrgSchema(Schema):
     """POST:create_org."""
 
@@ -24,6 +36,14 @@ class CreateOrgSchema(Schema):
         required=True,
         validate=validate.OneOf(['dance_group', 'studio'])
     )
+    social = fields.Nested(SocialSchema)
+
+
+class UpdateOrgSchema(Schema):
+    """POST:update_org."""
+
+    description = fields.Str()
+    address = fields.Str()
     social = fields.Nested(SocialSchema)
 
 
@@ -40,29 +60,20 @@ class InviteMemberSchema(Schema):
             raise ValidationError('At least one fields: email or user_id')
 
 
-class UpdateOrgSchema(Schema):
-    """POST:update_org."""
-
-    description = fields.Str()
-    address = fields.Str()
-    social = fields.Nested(SocialSchema)
-
-
 class CreateEventSchema(Schema):
     """POST:create_event."""
 
     name = fields.Str(required=True)
     description = fields.Str()
     address = fields.Str()
-    amount = fields.Int(required=True, validate=validate.Range(min=0))
-    end_at = fields.TimeDelta(required=True)
-    price = fields.Int(required=True, validate=validate.Range(min=0))
-    reg_end_at = fields.TimeDelta(required=True)
+    start_at = fields.TimeDelta()
+    end_at = fields.TimeDelta()
     reg_link = fields.URL()
-    reg_start_at = fields.TimeDelta(required=True)
-    start_at = fields.TimeDelta(required=True)
+    reg_start_at = fields.TimeDelta()
+    reg_end_at = fields.TimeDelta()
 
     social = fields.Nested(SocialSchema)
+    tickets = fields.List(fields.Nested(TicketSchema))
 
 
 class UpdateEventSchema(Schema):
@@ -71,12 +82,10 @@ class UpdateEventSchema(Schema):
     name = fields.Str()
     description = fields.Str()
     address = fields.Str()
-    amount = fields.Int(validate=validate.Range(min=0))
+    start_at = fields.TimeDelta()
     end_at = fields.TimeDelta()
-    price = fields.Int(validate=validate.Range(min=0))
-    reg_end_at = fields.TimeDelta()
     reg_link = fields.URL()
     reg_start_at = fields.TimeDelta()
-    start_at = fields.TimeDelta()
+    reg_end_at = fields.TimeDelta()
 
     social = fields.Nested(SocialSchema)

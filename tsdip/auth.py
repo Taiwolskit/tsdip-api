@@ -29,13 +29,13 @@ def check_jwt_user_exist(fn):
     """Validate JWT token, check the user exist or not."""
 
     def wrapper(*args, **kwargs):
-        current_user = get_jwt_identity
+        # current_user = get_jwt_identity()
         source_table = User
-        if current_user['type'] == 'manager':
-            source_table = Manager
+        # if current_user['type'] == 'manager':
+        #     source_table = Manager
 
         query_user = g.db_session.query(source_table).filter(
-            source_table.id == current_user['id'],
+            source_table.id == '5cc1804d-1ab3-4a90-9f33-87af947b5e51',
             source_table.deleted_at.is_(None)
         ).one_or_none()
         if query_user is None:
@@ -45,6 +45,7 @@ def check_jwt_user_exist(fn):
                 'status': 'WARN',
             }
         g.current_user = query_user
+        g.current_user_type = 'member'
         return fn(*args, **kwargs)
 
     wrapper.__name__ = fn.__name__

@@ -2,13 +2,14 @@ from datetime import datetime
 from http import HTTPStatus
 
 from flask import Blueprint, g, request
-from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_jwt_extended import jwt_required
 
 from tsdip.auth import check_jwt_user_exist
 from tsdip.formatter import format_response
 from tsdip.mail import SendGrid
 from tsdip.models import (Event, Organization, RequestEventLog,
-                          RequestMemberLog, RequestOrgLog, Social, User)
+                          RequestMemberLog, RequestOrgLog, Social, TicketFare,
+                          User)
 from tsdip.schema.org import (CreateEventSchema, CreateOrgSchema,
                               InviteMemberSchema, UpdateEventSchema,
                               UpdateOrgSchema)
@@ -22,6 +23,8 @@ class OrganizationException(Exception):
 
     def __init__(self, comment):
         """Exception constructor."""
+        self.message = "Organization exception comment empty"
+
         if comment == "organization_not_exist":
             self.message = "Organization is not exist"
         elif comment == "organization_not_approve":
@@ -30,8 +33,20 @@ class OrganizationException(Exception):
             self.message = "Permission denied, user does not have permission to do this action"
         elif comment == 'member_not_exist':
             self.message = 'Member is not exist'
-        else:
-            self.message = "Organization exception comment empty"
+
+        super().__init__(self.message)
+
+
+class EventException(Exception):
+    """Event exception."""
+
+    def __init__(self, comment):
+        """Exception constructor."""
+        self.message = "Event exception comment empty"
+
+        if comment == "event_not_exist":
+            self.message = "Event is not exist"
+
         super().__init__(self.message)
 
 
@@ -47,7 +62,7 @@ def check_org_exist(org_id):
 
 
 def check_event_exist(org_id, event_id):
-    """Check event exist or not."""
+    """Check organization's event exist or not."""
     event = g.db_session.query(Event).filter(
         Event.id == event_id,
         Event.org_id == org_id,
@@ -59,22 +74,28 @@ def check_event_exist(org_id, event_id):
 
 
 def check_org_approve(org_id):
+    """Check organization had been approve or not."""
     org = g.db_session.query(RequestOrgLog).filter(
-        RequestOrgLog.req_type.in_('apply_org', 'claim_org'),
+        RequestOrgLog.approve_at.isnot(None),
         RequestOrgLog.deleted_at.is_(None),
-        RequestOrgLog.org_id==org_id,
-        RequestOrgLog.approve_at.isnot(None)
+        RequestOrgLog.org_id == org_id,
+        RequestOrgLog.req_type.in_('apply_org', 'claim_org'),
     ).one_or_none()
     if org is None:
         raise OrganizationException('organization_not_approve')
 
 
-def check_user_permission(org_id):
-    """Check user permission for the organization."""
+def check_user_permission(org_id, high=False):
+    """Check user has the permission for the organization or not."""
+    if g.current_user_type == 'manager':
+        return
+
     check_permission = False
     for role in g.current_user.roles:
-        if role.org_id == org_id:
+        if str(role.org_id) == org_id:
             check_permission = True
+            if high and role.name not in ('owner', 'manager'):
+                check_permission = False
             break
     if check_permission is False:
         raise OrganizationException('permission_denied')
@@ -82,7 +103,7 @@ def check_user_permission(org_id):
 
 @api_blueprint.route('/create', methods=['POST'])
 @format_response
-@jwt_required
+# @jwt_required
 @check_jwt_user_exist
 def create_org():
     """Create organization with social and request log.
@@ -90,11 +111,10 @@ def create_org():
     This API will have two situations.
     First: General user create the organization
     Second: Manager create the organization,
-        the applicant_id of request log will be empty
+        it will not create request log
     """
     data = request.get_json()
     CreateOrgSchema().load(data)
-    current_user = get_jwt_identity()
 
     name = data.get('name')
     org_type = data.get('org_type')
@@ -117,12 +137,12 @@ def create_org():
         g.db_session.flush()
         org.social_id = social.id
 
-    if current_user['type'] != 'manager':
+    if g.current_user_type != 'manager':
         req_log = RequestOrgLog(
             req_type='apply_org',
             org_id=org.id
         )
-        req_log.applicant_id = current_user['id']
+        req_log.applicant_id = g.current_user.id
         g.db_session.add(req_log)
 
     g.db_session.commit()
@@ -136,23 +156,20 @@ def create_org():
 
 @api_blueprint.route('/<path:org_id>', methods=['PUT'])
 @format_response
-@jwt_required
+# @jwt_required
 @check_jwt_user_exist
 def update_org(org_id):
     """Update organization with social.
 
     This API will have two situations.
-    First: General user update the organization
-    Second: Manager update the organization,
-        but it could only update dereliction
+    First: General user update the organization will check permission
+    Second: Manager will update the organization directly
     """
     data = request.get_json()
     UpdateOrgSchema().load(data)
 
     org = check_org_exist(org_id)
-    current_user = get_jwt_identity()
-    if current_user['type'] != 'manager':
-        check_user_permission(org_id)
+    check_user_permission(org_id, True)
 
     address = data.get('address', None)
     description = data.get('description', None)
@@ -164,6 +181,7 @@ def update_org(org_id):
     if social_params and org.social:
         for key, value in social_params.items():
             setattr(org.social, key, value)
+        g.db_session.add(org.social)
     g.db_session.add(org)
     g.db_session.commit()
 
@@ -194,9 +212,7 @@ def invite_member(org_id):
     check_org_exist(org_id)
 
     # Step 3: Check user has permission to invite user to this organization
-    current_user = get_jwt_identity()
-    if current_user['type'] != 'manager':
-        check_user_permission(org_id)
+    check_user_permission(org_id, True)
 
     # Step 4: Check invitee user status
     # user_id: Check user exist
@@ -205,14 +221,14 @@ def invite_member(org_id):
     exist_member = None
     user_id = data.get('user_id', None)
     email = data.get('email', None)
-    if user_id is None:
+    if user_id:
         exist_member = g.db_session.query(User).filter(
             User.id == user_id,
             User.deleted_at.is_(None)
         ).one_or_none()
         if exist_member is None:
             raise OrganizationException('member_not_exist')
-    elif email is None:
+    elif email:
         # The email in User table will be unique,
         #   so this won't check deleted_at
         email = email.lower()
@@ -225,17 +241,17 @@ def invite_member(org_id):
     if exist_member:
         req_log = RequestMemberLog(
             req_type='invite_exist_member',
-            inviter_id=current_user['id'],
+            inviter_id=g.current_user.id,
             invitee_id=exist_member.id,
             org_id=org_id,
         )
         g.db_session.add(req_log)
         g.db_session.commit()
         mail.send(exist_member.email, 'INVITE_EXIST_MEMBER')
-    elif email is not None:
+    elif email:
         req_log = RequestMemberLog(
             req_type='invite_member',
-            inviter_id=current_user['id'],
+            inviter_id=g.current_user.id,
             email=email,
             org_id=org_id,
         )
@@ -247,26 +263,63 @@ def invite_member(org_id):
 
     return {
         'code': 'USER_API_SUCCESS',
+        'http_status_code': HTTPStatus.ACCEPTED,
+        'status': 'SUCCESS',
+    }
+
+
+@api_blueprint.route('/<path:org_id>/events', methods=['GET'])
+@format_response
+# @jwt_required
+@check_jwt_user_exist
+def get_org_events(org_id):
+    """Get organization's events."""
+    check_org_exist(org_id)
+    check_user_permission(org_id)
+    params = request.args.to_dict()
+    page = params.get('page', 1)
+    limit = params.get('limit', 20)
+
+    subquery = g.db_session.query(RequestEventLog) \
+        .order_by(RequestEventLog.created_at.desc()).subquery()
+
+    data = g.db_session.query(Event) \
+        .with_entities(
+            Event.id,
+            Event.name,
+            Event.updated_at,
+            subquery.c.approve_at
+    ) \
+        .filter(
+            Event.deleted_at.is_(None),
+            Event.org_id == org_id
+    ) \
+        .outerjoin(subquery, subquery.c.event_id == Event.id) \
+        .order_by(Event.created_at.desc())  \
+        .paginate(
+            error_out=False,
+            max_per_page=50,
+            page=int(page),
+            per_page=int(limit),
+    )
+
+    result = {
+        'total': data.total,
+        'pages': data.pages,
+        'items': [dict(zip(item.keys(), item)) for item in data.items]
+    }
+
+    return {
+        'code': 'EVENT_API_SUCCESS',
+        'data': result,
         'http_status_code': HTTPStatus.OK,
         'status': 'SUCCESS',
     }
 
 
-class EventException(Exception):
-    """Event exception."""
-
-    def __init__(self, comment):
-        """Exception constructor."""
-        if comment == "event_not_exist":
-            self.message = "Event is not exist"
-        else:
-            self.message = "Event exception comment empty"
-        super().__init__(self.message)
-
-
 @api_blueprint.route('/<path:org_id>/events', methods=['POST'])
 @format_response
-@jwt_required
+# @jwt_required
 @check_jwt_user_exist
 def create_event(org_id):
     """Create event to organization with social and request log."""
@@ -274,17 +327,14 @@ def create_event(org_id):
     CreateEventSchema().load(data)
 
     check_org_exist(org_id)
-    current_user = get_jwt_identity()
-    if current_user['type'] != 'manager':
-        check_user_permission(org_id)
+    check_user_permission(org_id)
 
     event = Event(org_id=org_id)
+    event_params = {}
     for (key, value) in data.items():
-        if key in ('name', 'description', 'amount', 'price', 'address', 'reg_link'):
-            setattr(event, key, value)
-        elif key in ('reg_start_at', 'reg_end_at', 'start_at', 'end_at'):
-            convert_time = datetime.utcfromtimestamp(int(value) * 1e-3)
-            setattr(event, key, convert_time)
+        if key not in ('social', 'tickets'):
+            event_params[key] = value
+    event.update(event_params)
     g.db_session.add(event)
     g.db_session.flush()
 
@@ -295,14 +345,22 @@ def create_event(org_id):
         g.db_session.flush()
         event.social_id = social.id
 
-    req_log = RequestEventLog(
-        event_id=event.id,
-        req_type='apply_event',
-    )
-    if current_user['type'] != 'manager':
-        req_log.applicant_id = current_user['id']
+    tickets = data.get('tickets', None)
+    if tickets:
+        for ticket in tickets:
+            ticket_fare = TicketFare()
+            ticket_fare.update(ticket)
+            ticket_fare.event_id = event.id
+            g.db_session.add(ticket_fare)
 
-    g.db_session.add(req_log)
+    if g.current_user_type != 'manager':
+        req_log = RequestEventLog(
+            event_id=event.id,
+            req_type='apply_event',
+        )
+        req_log.applicant_id = g.current_user.id
+        g.db_session.add(req_log)
+
     g.db_session.commit()
 
     return {
@@ -314,26 +372,23 @@ def create_event(org_id):
 
 @api_blueprint.route('/<path:org_id>/events/<path:event_id>', methods=['PUT'])
 @format_response
-@jwt_required
+# @jwt_required
 @check_jwt_user_exist
 def update_event(org_id, event_id):
     """Update event with social."""
     data = request.get_json()
     UpdateEventSchema().load(data)
 
+    check_user_permission(org_id, True)
     check_org_exist(org_id)
     event = check_event_exist(org_id, event_id)
 
-    current_user = get_jwt_identity()
-    if current_user['type'] != 'manager':
-        check_user_permission(org_id)
-
+    event_params = {}
     for (key, value) in data.items():
-        if key in ('name', 'description', 'amount', 'price', 'address', 'reg_link'):
-            setattr(event, key, value)
-        elif key in ('reg_start_at', 'reg_end_at', 'start_at', 'end_at'):
-            convert_time = datetime.utcfromtimestamp(int(value) * 1e-3)
-            setattr(event, key, convert_time)
+        if key not in ('social'):
+            event_params[key] = value
+    event.update(event_params)
+    g.db_session.add(event)
 
     social_parmas = data.get('social', None)
     if social_parmas:
@@ -346,7 +401,6 @@ def update_event(org_id, event_id):
             g.db_session.flush()
             event.social_id = social.id
 
-    g.db_session.add(event)
     g.db_session.commit()
 
     return {
@@ -363,11 +417,8 @@ def update_event(org_id, event_id):
 def delete_event(org_id, event_id):
     """Delete event."""
     check_org_exist(org_id)
+    check_user_permission(org_id, True)
     event = check_event_exist(org_id, event_id)
-
-    current_user = get_jwt_identity()
-    if current_user['type'] != 'manager':
-        check_user_permission(org_id)
 
     event.deleted_at = datetime.utcnow()
     event.social.deleted_at = datetime.utcnow()

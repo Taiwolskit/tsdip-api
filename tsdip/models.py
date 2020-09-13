@@ -36,9 +36,9 @@ class Base():
     )
     deleted_at = db.Column(TIMESTAMP)
 
-    def update(self, **kwargs):
+    def update(self, params):
         """ORM model base update function."""
-        for key, value in kwargs.items():
+        for key, value in params.items():
             if '_at' in key:
                 convert_time = datetime.utcfromtimestamp(int(value) * 1e-3)
                 setattr(self, key, convert_time)
@@ -79,11 +79,12 @@ class Event(db.Model, Base):
 
     name = db.Column(db.String(255), nullable=False, unique=True)
     description = db.Column(db.Text)
+    address = db.Column(db.String(255))
+    start_at = db.Column(TIMESTAMP)
+    end_at = db.Column(TIMESTAMP)
     reg_link = db.Column(db.String(128))
     reg_start_at = db.Column(TIMESTAMP)
     reg_end_at = db.Column(TIMESTAMP)
-    start_at = db.Column(TIMESTAMP)
-    end_at = db.Column(TIMESTAMP)
 
     org_id = db.Column(
         UUID(as_uuid=True),

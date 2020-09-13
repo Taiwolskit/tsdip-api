@@ -15,6 +15,7 @@ pylama = "*"
 
 [packages]
 flask = "*"
+Flask-Cors = "*"
 Flask-JWT-Extended = "*"
 Flask-Migrate = "*"
 Flask-SQLAlchemy = "*"

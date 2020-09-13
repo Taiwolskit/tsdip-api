@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
 
 from flask_jwt_extended import JWTManager
+from flask_cors import CORS
 
 metadata = MetaData()
 db = SQLAlchemy(metadata=metadata)
@@ -16,6 +17,7 @@ def create_app(config=None):
 
     db.init_app(app)
     JWTManager(app)
+    CORS(app)
 
     from .routes.event import api_blueprint as event_blueprint
     from .routes.manager import api_blueprint as manager_blueprint
