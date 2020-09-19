@@ -1,0 +1,52 @@
+{
+    "configurations": [
+        {
+            "name": "Python: Flask",
+            "type": "python",
+            "request": "launch",
+            "module": "flask",
+            "env": {
+                "FLASK_APP": "app.py",
+                "FLASK_ENV": "development",
+            },
+            "args": [
+                "run",
+                "--host=0.0.0.0"
+            ],
+            "gevent": true,
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: uWSGI",
+            "type": "python",
+            "request": "launch",
+            "module": "uwsgi",
+            "env": {
+                "FLASK_APP": "app.py",
+                "FLASK_ENV": "development",
+            },
+            "args": [
+                "--ini",
+                "app.ini",
+                "--py-autoreload",
+                "1",
+                "--chdir",
+                "${PWD}"
+            ],
+            "gevent": true,
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Attach to Kubernetes Pod (Python)",
+            "type": "cloudcode.kubernetes",
+            "request": "attach",
+            "language": "Python",
+            "debugPort": 3000,
+            "podSelector": {
+                "app": "deployment-name"
+            },
+            "localRoot": "${workspaceFolder}",
+            "remoteRoot": "Path to the Remote Directory Containing the Program"
+        }
+    ]
+}
