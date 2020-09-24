@@ -109,21 +109,20 @@ def create_org():
     """Create organization with social and request log.
 
     This API will have two situations.
-    First: General user create the organization
+    First: General user create the organization,
+        it will create request log
     Second: Manager create the organization,
         it will not create request log
     """
     data = request.get_json()
     CreateOrgSchema().load(data)
 
-    address = data.get('address', None)
     description = data.get('description', None)
     name = data.get('name')
     org_type = data.get('org_type')
     social_params = data.get('social', None)
 
     org = Organization(
-        address=address,
         description=description,
         name=name,
         org_type=org_type
@@ -137,12 +136,12 @@ def create_org():
         g.db_session.flush()
         org.social_id = social.id
 
-    if g.current_user_type != 'manager':
+    if g.current_user_type == 'user':
         req_log = RequestOrgLog(
+            applicant_id=g.current_user.id,
+            org_id=org.id,
             req_type='apply_org',
-            org_id=org.id
         )
-        req_log.applicant_id = g.current_user.id
         g.db_session.add(req_log)
 
     g.db_session.commit()
@@ -159,7 +158,7 @@ def create_org():
 # @jwt_required
 @check_jwt_user_exist
 def update_org(org_id):
-    """Update organization with social.
+    """Update organization description and social.
 
     This API will have two situations.
     First: General user update the organization will check permission

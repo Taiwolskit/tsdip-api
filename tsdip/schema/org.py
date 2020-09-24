@@ -5,6 +5,7 @@ from marshmallow import (Schema, ValidationError, fields, validate,
 class SocialSchema(Schema):
     """Social schema."""
 
+    address = fields.Str()
     email = fields.Email()
     fan_page = fields.URL()
     instagram = fields.Str()
@@ -30,12 +31,11 @@ class CreateOrgSchema(Schema):
     """POST:create_org."""
 
     name = fields.Str(required=True)
-    description = fields.Str()
-    address = fields.Str()
     org_type = fields.Str(
         required=True,
         validate=validate.OneOf(['dance_group', 'studio'])
     )
+    description = fields.Str()
     social = fields.Nested(SocialSchema)
 
 
@@ -43,7 +43,6 @@ class UpdateOrgSchema(Schema):
     """POST:update_org."""
 
     description = fields.Str()
-    address = fields.Str()
     social = fields.Nested(SocialSchema)
 
 

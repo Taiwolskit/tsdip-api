@@ -3,10 +3,9 @@ from http import HTTPStatus
 from flask import Blueprint, g, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy import or_
-
 from tsdip.auth import check_jwt_user_exist
 from tsdip.formatter import format_response
-from tsdip.models import User
+from tsdip.models import Manager, User
 from tsdip.schema.user import UserProfileSchema, UserSignUpSchema
 
 api_blueprint = Blueprint('users', __name__, url_prefix='/users')
@@ -30,18 +29,22 @@ def check_user_data_used(data, user_id=None):
     telephone = data.get('telephone', None)
     username = data.get('username', None)
 
+    source_table = User
+    if g.current_user_type == 'manager':
+        source_table = Manager
+
     or_select = []
     if email:
         email = email.lower()
-        or_select.append(User.email == email)
+        or_select.append(source_table.email == email)
     if telephone:
-        or_select.append(User.telephone == telephone)
+        or_select.append(source_table.telephone == telephone)
     if username:
         username = username.lower()
-        or_select.append(User.username == username)
+        or_select.append(source_table.username == username)
 
-    exist_user = g.db_session.query(User).filter(
-        User.id != user_id,
+    exist_user = g.db_session.query(source_table).filter(
+        source_table.id != user_id,
         or_(*or_select)
     ).first()
 

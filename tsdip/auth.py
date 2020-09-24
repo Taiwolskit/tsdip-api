@@ -45,7 +45,7 @@ def check_jwt_user_exist(fn):
                 'status': 'WARN',
             }
         g.current_user = query_user
-        g.current_user_type = 'member'
+        # g.current_user_type = current_user['type']
         return fn(*args, **kwargs)
 
     wrapper.__name__ = fn.__name__

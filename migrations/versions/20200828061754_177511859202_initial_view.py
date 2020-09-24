@@ -16,7 +16,7 @@ branch_labels = None
 depends_on = None
 
 
-vw_org_approve = ReplaceableObject(
+vw_org_approve_status = ReplaceableObject(
     "vw_org_approve_status",
     """
         SELECT
@@ -38,8 +38,8 @@ vw_org_approve = ReplaceableObject(
 
 
 def upgrade():
-    op.create_view(vw_org_approve)
+    op.create_view(vw_org_approve_status)
 
 
 def downgrade():
-    op.drop_view(vw_org_approve)
+    op.drop_view(vw_org_approve_status)
