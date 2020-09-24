@@ -116,10 +116,10 @@ def create_org():
     data = request.get_json()
     CreateOrgSchema().load(data)
 
-    name = data.get('name')
-    org_type = data.get('org_type')
     address = data.get('address', None)
     description = data.get('description', None)
+    name = data.get('name')
+    org_type = data.get('org_type')
     social_params = data.get('social', None)
 
     org = Organization(

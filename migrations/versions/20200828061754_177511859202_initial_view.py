@@ -16,21 +16,30 @@ branch_labels = None
 depends_on = None
 
 
-vw_demo = ReplaceableObject(
-    "vw_demo",
+vw_org_approve = ReplaceableObject(
+    "vw_org_approve_status",
     """
-    SELECT
-        public.user.id
-    FROM
-        public.user
-        LEFT JOIN public.user_role ON public.user_role.user_id = public.user.id
+        SELECT
+            org.id AS org_id,
+            org.name AS org_name,
+            org.org_type,
+            rol.req_type,
+            rol.approve_at,
+            rol.applicant_id,
+            rol.approver_id
+        FROM
+            organization AS org
+            LEFT JOIN request_org_log AS rol ON rol.org_id = org.id
+        WHERE
+            org.deleted_at IS NULL
+            AND rol.deleted_at IS NULL
     """
 )
 
 
 def upgrade():
-    op.create_view(vw_demo)
+    op.create_view(vw_org_approve)
 
 
 def downgrade():
-    op.drop_view(vw_demo)
+    op.drop_view(vw_org_approve)

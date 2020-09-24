@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, func, join, select, text
+from sqlalchemy import CheckConstraint, and_, func, join, select, text
 from sqlalchemy.dialects.postgresql import ENUM, TIMESTAMP, UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import validates
@@ -10,6 +10,7 @@ from tsdip import db, metadata
 from tsdip.view import view
 
 ORG_FOREKEY_FIELD = 'organization.id'
+MANAGER_FOREKEY_FIELD = 'manager.id'
 USER_FOREKEY_FIELD = 'user.id'
 
 ViewBase = declarative_base(metadata=metadata)
@@ -60,6 +61,7 @@ class Base():
 class Social(db.Model, Base):
     """ORM Social model."""
 
+    address = db.Column(db.String(255))
     email = db.Column(db.String(255), unique=True)
     fan_page = db.Column(db.String(255), unique=True)
     instagram = db.Column(db.String(255), unique=True)
@@ -68,7 +70,7 @@ class Social(db.Model, Base):
     website = db.Column(db.String(255), unique=True)
     youtube = db.Column(db.String(255), unique=True)
 
-    @validates('email', 'fan_page', 'instagram', 'line', 'telephone', 'website', 'youtube')
+    @validates('address', 'email', 'fan_page', 'instagram', 'line', 'telephone', 'website', 'youtube')
     def convert_lower(self, key, value):
         """Convert field to lower case."""
         return value.lower()
@@ -79,13 +81,25 @@ class Event(db.Model, Base):
 
     name = db.Column(db.String(255), nullable=False, unique=True)
     description = db.Column(db.Text)
-    address = db.Column(db.String(255))
     start_at = db.Column(TIMESTAMP)
     end_at = db.Column(TIMESTAMP)
     reg_link = db.Column(db.String(128))
     reg_start_at = db.Column(TIMESTAMP)
     reg_end_at = db.Column(TIMESTAMP)
 
+    approved_at = db.Column(TIMESTAMP)
+    published_at = db.Column(TIMESTAMP)
+
+    creator_id = db.Column(
+        UUID(as_uuid=True),
+        db.ForeignKey(USER_FOREKEY_FIELD,
+                      onupdate='CASCADE', ondelete='CASCADE')
+    )
+    approver_id = db.Column(
+        UUID(as_uuid=True),
+        db.ForeignKey(MANAGER_FOREKEY_FIELD,
+                      onupdate='CASCADE', ondelete='CASCADE')
+    )
     org_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey(ORG_FOREKEY_FIELD, onupdate='CASCADE',
@@ -97,9 +111,11 @@ class Event(db.Model, Base):
         db.ForeignKey('social.id', onupdate='CASCADE', ondelete='CASCADE')
     )
 
+    approver = db.relationship('Manager', uselist=False)
+    creator = db.relationship('User', uselist=False)
     org = db.relationship('Organization', uselist=False)
-    social = db.relationship('Social', uselist=False)
     requests = db.relationship('RequestEventLog', lazy=True)
+    social = db.relationship('Social', uselist=False)
     tickets = db.relationship('TicketFare', lazy=True)
 
 
@@ -118,11 +134,17 @@ class TicketFare(db.Model, Base):
     reg_start_at = db.Column(TIMESTAMP)
     reg_end_at = db.Column(TIMESTAMP)
 
+    creator_id = db.Column(
+        UUID(as_uuid=True),
+        db.ForeignKey(USER_FOREKEY_FIELD,
+                      onupdate='CASCADE', ondelete='CASCADE')
+    )
     event_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey('event.id', onupdate='CASCADE', ondelete='CASCADE')
     )
 
+    creator = db.relationship('User', uselist=False)
     event = db.relationship('Event', uselist=False)
 
 
@@ -131,27 +153,42 @@ class Organization(db.Model, Base):
 
     name = db.Column(db.String(255), nullable=False, unique=True)
     description = db.Column(db.Text)
-    address = db.Column(db.String(255))
     org_type = db.Column(
         ENUM('dance_group', 'studio', name='org_type'),
         nullable=False,
         server_default='studio'
+    )
+
+    approved_at = db.Column(TIMESTAMP)
+    published_at = db.Column(TIMESTAMP)
+
+    creator_id = db.Column(
+        UUID(as_uuid=True),
+        db.ForeignKey(USER_FOREKEY_FIELD,
+                      onupdate='CASCADE', ondelete='CASCADE')
+    )
+    approver_id = db.Column(
+        UUID(as_uuid=True),
+        db.ForeignKey(MANAGER_FOREKEY_FIELD,
+                      onupdate='CASCADE', ondelete='CASCADE')
     )
     social_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey('social.id', onupdate='CASCADE', ondelete='CASCADE')
     )
 
-    social = db.relationship('Social', uselist=False)
+    approver = db.relationship('Manager', uselist=False)
+    creator = db.relationship('User', uselist=False)
     events = db.relationship('Event', lazy=True)
     requests = db.relationship('RequestOrgLog', lazy=True)
+    social = db.relationship('Social', uselist=False)
 
 
 class Permission(db.Model, Base):
     """ORM Permission model."""
 
-    could_invite = db.Column(db.Boolean, nullable=False,
-                             server_default=expression.false())
+    manage_member = db.Column(db.Boolean, nullable=False,
+                              server_default=expression.false())
 
 
 class Role(db.Model, Base):
@@ -227,11 +264,11 @@ class User(db.Model, Base):
     telephone = db.Column(db.String(20), unique=True)
 
     roles = db.relationship('Role', secondary=user_role, lazy='dynamic')
-    orgRequests = db.relationship('RequestOrgLog', lazy=True)
-    eventRequests = db.relationship('RequestEventLog', lazy=True)
-    inviteRequests = db.relationship(
+    org_requests = db.relationship('RequestOrgLog', lazy=True)
+    event_requests = db.relationship('RequestEventLog', lazy=True)
+    invite_requests = db.relationship(
         'RequestMemberLog', lazy=True, foreign_keys='RequestMemberLog.inviter_id')
-    inviteeRequests = db.relationship(
+    invitee_requests = db.relationship(
         'RequestMemberLog', lazy=True, foreign_keys='RequestMemberLog.invitee_id')
 
     @validates('email', 'username')
@@ -262,7 +299,8 @@ class RequestOrgLog(db.Model, Base):
     )
     approver_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('manager.id', onupdate='CASCADE', ondelete='CASCADE')
+        db.ForeignKey(MANAGER_FOREKEY_FIELD,
+                      onupdate='CASCADE', ondelete='CASCADE')
     )
     approve_at = db.Column(TIMESTAMP)
 
@@ -293,7 +331,8 @@ class RequestEventLog(db.Model, Base):
     )
     approver_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('manager.id', onupdate='CASCADE', ondelete='CASCADE')
+        db.ForeignKey(MANAGER_FOREKEY_FIELD,
+                      onupdate='CASCADE', ondelete='CASCADE')
     )
     approve_at = db.Column(TIMESTAMP)
 
@@ -344,8 +383,6 @@ class RequestMemberLog(db.Model, Base):
 class Manager(db.Model, Base):
     """ORM Manager model."""
 
-    __tablename__ = 'manager'
-
     username = db.Column(db.String(255), nullable=False, unique=True)
     email = db.Column(db.String(255), nullable=False, unique=True)
     telephone = db.Column(db.String(20), unique=True)
@@ -356,8 +393,31 @@ class Manager(db.Model, Base):
         return value.lower()
 
 
-class MyStuff(ViewBase):
-    __table__ = view("vw_demo", metadata,
-                     select([User.id.label('id')]).
-                     select_from(join(User, user_role))
-                     )
+class VWOrgApproveStatus(ViewBase):
+    """View: Organization approve status."""
+
+    view_logic = select(
+        [
+            Organization.id.label('org_id'),
+            Organization.name.label('org_name'),
+            Organization.org_type.label('org_type'),
+            RequestOrgLog.req_type.label('req_type'),
+            RequestOrgLog.approve_at.label('approve_at'),
+            RequestOrgLog.applicant_id.label('applicant_id'),
+            RequestOrgLog.approver_id.label('approver_id'),
+        ]
+    ).select_from(
+        join(
+            RequestOrgLog,
+            Organization,
+            RequestOrgLog.org_id == Organization.id
+        )
+    ) \
+        .where(
+            and_(
+                Organization.deleted_at.is_(None),
+                RequestOrgLog.deleted_at.is_(None)
+            )
+    )
+
+    __table__ = view("vw_org_approve_status", metadata, view_logic)
