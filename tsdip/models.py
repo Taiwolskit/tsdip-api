@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, and_, func, join, select, text
+from sqlalchemy import CheckConstraint, func, join, select, text
 from sqlalchemy.dialects.postgresql import ENUM, TIMESTAMP, UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import validates
@@ -9,8 +9,8 @@ from sqlalchemy.sql import expression
 from tsdip import db, metadata
 from tsdip.view import view
 
-ORG_FOREKEY_FIELD = 'organization.id'
 MANAGER_FOREKEY_FIELD = 'manager.id'
+ORG_FOREKEY_FIELD = 'organization.id'
 USER_FOREKEY_FIELD = 'user.id'
 
 ViewBase = declarative_base(metadata=metadata)
@@ -121,6 +121,7 @@ class Event(db.Model, Base):
 
 class TicketFare(db.Model, Base):
     """ORM Ticket Fare model."""
+
     __table_args__ = (
         CheckConstraint('amount > -1'),
         CheckConstraint('price > -1'),
@@ -405,7 +406,8 @@ class VWOrgApproveStatus(ViewBase):
             RequestOrgLog.approve_at.label('approve_at'),
             RequestOrgLog.applicant_id.label('applicant_id'),
             RequestOrgLog.approver_id.label('approver_id'),
-        ]
+        ],
+        use_labels=True
     ).select_from(
         join(
             RequestOrgLog,
@@ -413,11 +415,48 @@ class VWOrgApproveStatus(ViewBase):
             RequestOrgLog.org_id == Organization.id
         )
     ) \
-        .where(
-            and_(
-                Organization.deleted_at.is_(None),
-                RequestOrgLog.deleted_at.is_(None)
-            )
-    )
+        .where(Organization.deleted_at.is_(None)) \
+        .where(RequestOrgLog.deleted_at.is_(None))
 
     __table__ = view("vw_org_approve_status", metadata, view_logic)
+
+
+class VWUserPermission(ViewBase):
+    """View: User permission relation."""
+
+    first_logic = select(
+        [
+            User.id.label('user_id'),
+            Role.id.label('role_id'),
+            Role.permission_id.label('permission_id'),
+            Role.org_id.label('org_id'),
+            Role.name.label('role'),
+        ],
+        use_labels=True
+    ).select_from(
+        join(User, user_role, User.id == user_role.c.user_id)
+        .join(Role, user_role, Role.id == user_role.c.role_id)
+    ) \
+        .where(User.deleted_at.is_(None)) \
+        .where(user_role.c.deleted_at.is_(None)) \
+        .where(Role.deleted_at.is_(None))
+
+    view_logic = select(
+        [
+            first_logic.c.user_id,
+            first_logic.c.role_id,
+            first_logic.c.role,
+            Permission.id.label('permission_id'),
+            Organization.id.label('org_id'),
+            Organization.org_type.label('org_type')
+        ],
+        use_labels=True
+    ).select_from(
+        join(Permission, first_logic, Permission.id ==
+             first_logic.c.permission_id)
+        .join(Organization, first_logic, Organization.id == first_logic.c.org_id)
+    ) \
+        .where(Permission.deleted_at.is_(None)) \
+        .where(Organization.deleted_at.is_(None))
+
+    __table__ = view("vw_user_permission", metadata, view_logic)

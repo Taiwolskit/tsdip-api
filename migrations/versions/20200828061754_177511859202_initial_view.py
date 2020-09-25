@@ -36,10 +36,51 @@ vw_org_approve_status = ReplaceableObject(
     """
 )
 
+vw_user_permission = ReplaceableObject(
+    "vw_user_permission",
+    """
+        SELECT
+            temp.user_id,
+            temp.role_id,
+            temp.role,
+            p.id AS permission_id,
+            org.id AS org_id,
+            org.org_type
+        FROM
+            (
+                (
+                    SELECT
+                        r.id AS role_id,
+                        u.id AS user_id,
+                        r.permission_id,
+                        r.org_id,
+                        r.name AS role
+                    FROM
+                        (
+                            user_role AS ur
+                            LEFT JOIN "user" AS u ON u.id = ur.user_id
+                        )
+                        LEFT JOIN role r ON r.id = ur.role_id
+                    WHERE
+                        u.deleted_at IS NULL
+                        AND ur.deleted_at IS NULL
+                        AND r.deleted_at IS NULL
+                ) temp
+                LEFT JOIN permission AS p ON temp.permission_id = p.id
+            )
+            LEFT JOIN organization AS org ON temp.org_id =org.id
+        WHERE
+            p.deleted_at IS NULL
+            AND org.deleted_at IS NULL
+    """
+)
+
 
 def upgrade():
     op.create_view(vw_org_approve_status)
+    op.create_view(vw_user_permission)
 
 
 def downgrade():
     op.drop_view(vw_org_approve_status)
+    op.drop_view(vw_user_permission)
