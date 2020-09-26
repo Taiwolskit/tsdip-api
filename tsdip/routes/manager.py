@@ -16,10 +16,10 @@ class ManagerException(Exception):
 
     def __init__(self, comment):
         """Exception constructor."""
+        self.message = "Manager exception comment empty"
         if comment == 'manager_data_used':
             self.message = "Manager's data have been used"
-        else:
-            self.message = "Manager exception comment empty"
+
         super().__init__(self.message)
 
 

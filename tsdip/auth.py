@@ -35,7 +35,7 @@ def check_jwt_user_exist(fn):
         #     source_table = Manager
 
         query_user = g.db_session.query(source_table).filter(
-            source_table.id == '5cc1804d-1ab3-4a90-9f33-87af947b5e51',
+            source_table.id == '70510b83-aaef-4ccd-8471-57296f6b14c2',
             source_table.deleted_at.is_(None)
         ).one_or_none()
         if query_user is None:
@@ -45,6 +45,7 @@ def check_jwt_user_exist(fn):
                 'status': 'WARN',
             }
         g.current_user = query_user
+        g.current_user_type = 'user'
         # g.current_user_type = current_user['type']
         return fn(*args, **kwargs)
 

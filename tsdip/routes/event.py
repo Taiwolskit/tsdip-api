@@ -1,9 +1,9 @@
 from http import HTTPStatus
 
 from flask import Blueprint, g, request
-
 from tsdip.formatter import format_response
-from tsdip.models import Event, VWOrgApproveStatus, RequestEventLog
+from tsdip.models import (Event, RequestEventLog, VWOrgApproveStatus,
+                          VWUserPermission)
 
 api_blueprint = Blueprint('events', __name__, url_prefix='/events')
 
@@ -13,10 +13,10 @@ class EventException(Exception):
 
     def __init__(self, comment):
         """Exception constructor."""
+        self.message = "Event exception comment empty"
         if comment == "event_not_exist":
             self.message = "Event is not exist"
-        else:
-            self.message = "Create event exception comment empty"
+
         super().__init__(self.message)
 
 
@@ -36,9 +36,16 @@ def get_single_event(event_id):
     # if event.social:
     #     result['social'] = event.social.event.as_dict(filter_at=True)
 
-    cc = g.db_session.query(VWOrgApproveStatus).filter(
-        VWOrgApproveStatus.org_id == '08ac9b31-6e41-496e-9794-ce2c45a325f5'
+    # cc = g.db_session.query(VWOrgApproveStatus).filter(
+    #     VWOrgApproveStatus.org_id == '08ac9b31-6e41-496e-9794-ce2c45a325f5'
+    # ).one_or_none()
+    cc = g.db_session.query(VWUserPermission).filter(
+        VWUserPermission.org_id == '08ac9b31-6e41-496e-9794-ce2c45a325f5'
     ).one_or_none()
+    print(cc.user_id)
+    print(cc.role_id)
+    print(cc.role)
+    print(cc.permission_id)
     print(cc.org_id)
     print(cc.org_type)
     # for row in cc:

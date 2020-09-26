@@ -93,22 +93,22 @@ class Event(db.Model, Base):
     creator_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey(USER_FOREKEY_FIELD,
-                      onupdate='CASCADE', ondelete='CASCADE')
+                      onupdate='CASCADE', ondelete='SET NULL')
     )
     approver_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey(MANAGER_FOREKEY_FIELD,
-                      onupdate='CASCADE', ondelete='CASCADE')
+                      onupdate='CASCADE', ondelete='SET NULL')
     )
     org_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey(ORG_FOREKEY_FIELD, onupdate='CASCADE',
-                      ondelete='CASCADE'),
+                      ondelete='SET NULL'),
         nullable=False
     )
     social_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('social.id', onupdate='CASCADE', ondelete='CASCADE')
+        db.ForeignKey('social.id', onupdate='CASCADE', ondelete='SET NULL')
     )
 
     approver = db.relationship('Manager', uselist=False)
@@ -138,11 +138,11 @@ class TicketFare(db.Model, Base):
     creator_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey(USER_FOREKEY_FIELD,
-                      onupdate='CASCADE', ondelete='CASCADE')
+                      onupdate='CASCADE', ondelete='SET NULL')
     )
     event_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('event.id', onupdate='CASCADE', ondelete='CASCADE')
+        db.ForeignKey('event.id', onupdate='CASCADE', ondelete='SET NULL')
     )
 
     creator = db.relationship('User', uselist=False)
@@ -166,16 +166,16 @@ class Organization(db.Model, Base):
     creator_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey(USER_FOREKEY_FIELD,
-                      onupdate='CASCADE', ondelete='CASCADE')
+                      onupdate='CASCADE', ondelete='SET NULL')
     )
     approver_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey(MANAGER_FOREKEY_FIELD,
-                      onupdate='CASCADE', ondelete='CASCADE')
+                      onupdate='CASCADE', ondelete='SET NULL')
     )
     social_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('social.id', onupdate='CASCADE', ondelete='CASCADE')
+        db.ForeignKey('social.id', onupdate='CASCADE', ondelete='SET NULL')
     )
 
     approver = db.relationship('Manager', uselist=False)
@@ -208,12 +208,12 @@ class Role(db.Model, Base):
     org_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey(ORG_FOREKEY_FIELD, onupdate='CASCADE',
-                      ondelete='CASCADE'),
+                      ondelete='SET NULL'),
         nullable=False
     )
     permission_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('permission.id', onupdate='CASCADE', ondelete='CASCADE'),
+        db.ForeignKey('permission.id', onupdate='CASCADE', ondelete='SET NULL'),
         nullable=False
     )
 
@@ -228,13 +228,13 @@ user_role = db.Table(
         'user_id',
         UUID(as_uuid=True),
         db.ForeignKey(USER_FOREKEY_FIELD, onupdate='CASCADE',
-                      ondelete='CASCADE'),
+                      ondelete='SET NULL'),
         primary_key=True
     ),
     db.Column(
         'role_id',
         UUID(as_uuid=True),
-        db.ForeignKey('role.id', onupdate='CASCADE', ondelete='CASCADE'),
+        db.ForeignKey('role.id', onupdate='CASCADE', ondelete='SET NULL'),
         primary_key=True
     ),
     db.Column(
@@ -289,19 +289,19 @@ class RequestOrgLog(db.Model, Base):
     org_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey(ORG_FOREKEY_FIELD, onupdate='CASCADE',
-                      ondelete='CASCADE'),
+                      ondelete='SET NULL'),
         nullable=False
     )
     applicant_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey(USER_FOREKEY_FIELD,
-                      onupdate='CASCADE', ondelete='CASCADE'),
+                      onupdate='CASCADE', ondelete='SET NULL'),
         nullable=False
     )
     approver_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey(MANAGER_FOREKEY_FIELD,
-                      onupdate='CASCADE', ondelete='CASCADE')
+                      onupdate='CASCADE', ondelete='SET NULL')
     )
     approve_at = db.Column(TIMESTAMP)
 
@@ -321,19 +321,19 @@ class RequestEventLog(db.Model, Base):
     )
     event_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('event.id', onupdate='CASCADE', ondelete='CASCADE'),
+        db.ForeignKey('event.id', onupdate='CASCADE', ondelete='SET NULL'),
         nullable=False
     )
     applicant_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey(USER_FOREKEY_FIELD,
-                      onupdate='CASCADE', ondelete='CASCADE'),
+                      onupdate='CASCADE', ondelete='SET NULL'),
         nullable=False
     )
     approver_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey(MANAGER_FOREKEY_FIELD,
-                      onupdate='CASCADE', ondelete='CASCADE')
+                      onupdate='CASCADE', ondelete='SET NULL')
     )
     approve_at = db.Column(TIMESTAMP)
 
@@ -355,19 +355,19 @@ class RequestMemberLog(db.Model, Base):
     org_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey(ORG_FOREKEY_FIELD, onupdate='CASCADE',
-                      ondelete='CASCADE'),
+                      ondelete='SET NULL'),
         nullable=False
     )
     inviter_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey(USER_FOREKEY_FIELD,
-                      onupdate='CASCADE', ondelete='CASCADE'),
+                      onupdate='CASCADE', ondelete='SET NULL'),
         nullable=False
     )
     invitee_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey(USER_FOREKEY_FIELD,
-                      onupdate='CASCADE', ondelete='CASCADE')
+                      onupdate='CASCADE', ondelete='SET NULL')
     )
     accepted_at = db.Column(TIMESTAMP)
 

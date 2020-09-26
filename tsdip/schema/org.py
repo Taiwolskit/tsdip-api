@@ -64,7 +64,6 @@ class CreateEventSchema(Schema):
 
     name = fields.Str(required=True)
     description = fields.Str()
-    address = fields.Str()
     start_at = fields.TimeDelta()
     end_at = fields.TimeDelta()
     reg_link = fields.URL()
@@ -80,7 +79,6 @@ class UpdateEventSchema(Schema):
 
     name = fields.Str()
     description = fields.Str()
-    address = fields.Str()
     start_at = fields.TimeDelta()
     end_at = fields.TimeDelta()
     reg_link = fields.URL()

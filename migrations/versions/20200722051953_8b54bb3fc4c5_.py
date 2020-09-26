@@ -128,11 +128,11 @@ def upgrade():
                     sa.Column('social_id', postgresql.UUID(
                         as_uuid=True), nullable=True),
                     sa.ForeignKeyConstraint(
-                        ['creator_id'], [USER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='CASCADE'),
+                        ['creator_id'], [USER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='SET NULL'),
                     sa.ForeignKeyConstraint(
-                        ['approver_id'], [MANAGER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='CASCADE'),
+                        ['approver_id'], [MANAGER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='SET NULL'),
                     sa.ForeignKeyConstraint(
-                        ['social_id'], ['social.id'], onupdate='CASCADE', ondelete='CASCADE'),
+                        ['social_id'], ['social.id'], onupdate='CASCADE', ondelete='SET NULL'),
                     sa.PrimaryKeyConstraint('id'),
                     sa.UniqueConstraint('name')
                     )
@@ -169,13 +169,13 @@ def upgrade():
                     sa.Column('social_id', postgresql.UUID(
                         as_uuid=True), nullable=True),
                     sa.ForeignKeyConstraint(
-                        ['creator_id'], [USER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='CASCADE'),
+                        ['creator_id'], [USER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='SET NULL'),
                     sa.ForeignKeyConstraint(
-                        ['approver_id'], [MANAGER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='CASCADE'),
+                        ['approver_id'], [MANAGER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='SET NULL'),
                     sa.ForeignKeyConstraint(
-                        ['org_id'], [ORG_FOREKEY_FIELD], onupdate='CASCADE', ondelete='CASCADE'),
+                        ['org_id'], [ORG_FOREKEY_FIELD], onupdate='CASCADE', ondelete='SET NULL'),
                     sa.ForeignKeyConstraint(
-                        ['social_id'], ['social.id'], onupdate='CASCADE', ondelete='CASCADE'),
+                        ['social_id'], ['social.id'], onupdate='CASCADE', ondelete='SET NULL'),
                     sa.PrimaryKeyConstraint('id'),
                     sa.UniqueConstraint('name')
                     )
@@ -207,9 +207,9 @@ def upgrade():
                     sa.CheckConstraint('amount > -1'),
                     sa.CheckConstraint('price > -1'),
                     sa.ForeignKeyConstraint(
-                        ['creator_id'], [USER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='CASCADE'),
+                        ['creator_id'], [USER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='SET NULL'),
                     sa.ForeignKeyConstraint(
-                        ['event_id'], ['event.id'], onupdate='CASCADE', ondelete='CASCADE'),
+                        ['event_id'], ['event.id'], onupdate='CASCADE', ondelete='SET NULL'),
                     sa.PrimaryKeyConstraint('id')
                     )
     op.create_table('request_member_log',
@@ -233,11 +233,11 @@ def upgrade():
                     sa.Column('accepted_at', postgresql.TIMESTAMP(),
                               nullable=True),
                     sa.ForeignKeyConstraint(
-                        ['invitee_id'], [USER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='CASCADE'),
+                        ['invitee_id'], [USER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='SET NULL'),
                     sa.ForeignKeyConstraint(
-                        ['inviter_id'], [USER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='CASCADE'),
+                        ['inviter_id'], [USER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='SET NULL'),
                     sa.ForeignKeyConstraint(
-                        ['org_id'], [ORG_FOREKEY_FIELD], onupdate='CASCADE', ondelete='CASCADE'),
+                        ['org_id'], [ORG_FOREKEY_FIELD], onupdate='CASCADE', ondelete='SET NULL'),
                     sa.PrimaryKeyConstraint('id')
                     )
     op.create_table('request_org_log',
@@ -260,11 +260,11 @@ def upgrade():
                     sa.Column('approve_at', postgresql.TIMESTAMP(),
                               nullable=True),
                     sa.ForeignKeyConstraint(
-                        ['applicant_id'], [USER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='CASCADE'),
+                        ['applicant_id'], [USER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='SET NULL'),
                     sa.ForeignKeyConstraint(
-                        ['approver_id'], [MANAGER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='CASCADE'),
+                        ['approver_id'], [MANAGER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='SET NULL'),
                     sa.ForeignKeyConstraint(
-                        ['org_id'], [ORG_FOREKEY_FIELD], onupdate='CASCADE', ondelete='CASCADE'),
+                        ['org_id'], [ORG_FOREKEY_FIELD], onupdate='CASCADE', ondelete='SET NULL'),
                     sa.PrimaryKeyConstraint('id')
                     )
     op.create_table('role',
@@ -283,9 +283,9 @@ def upgrade():
                     sa.Column('permission_id', postgresql.UUID(
                         as_uuid=True), nullable=False),
                     sa.ForeignKeyConstraint(
-                        ['org_id'], [ORG_FOREKEY_FIELD], onupdate='CASCADE', ondelete='CASCADE'),
+                        ['org_id'], [ORG_FOREKEY_FIELD], onupdate='CASCADE', ondelete='SET NULL'),
                     sa.ForeignKeyConstraint(
-                        ['permission_id'], ['permission.id'], onupdate='CASCADE', ondelete='CASCADE'),
+                        ['permission_id'], ['permission.id'], onupdate='CASCADE', ondelete='SET NULL'),
                     sa.PrimaryKeyConstraint('id'),
                     sa.UniqueConstraint('org_id', 'permission_id',
                                         name='uq_role_org_id_permission_id')
@@ -310,11 +310,11 @@ def upgrade():
                     sa.Column('approve_at', postgresql.TIMESTAMP(),
                               nullable=True),
                     sa.ForeignKeyConstraint(
-                        ['applicant_id'], [USER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='CASCADE'),
+                        ['applicant_id'], [USER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='SET NULL'),
                     sa.ForeignKeyConstraint(
-                        ['approver_id'], [MANAGER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='CASCADE'),
+                        ['approver_id'], [MANAGER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='SET NULL'),
                     sa.ForeignKeyConstraint(
-                        ['event_id'], ['event.id'], onupdate='CASCADE', ondelete='CASCADE'),
+                        ['event_id'], ['event.id'], onupdate='CASCADE', ondelete='SET NULL'),
                     sa.PrimaryKeyConstraint('id')
                     )
     op.create_table('user_role',
@@ -329,9 +329,9 @@ def upgrade():
                     sa.Column('deleted_at', postgresql.TIMESTAMP(),
                               nullable=True),
                     sa.ForeignKeyConstraint(
-                        ['role_id'], ['role.id'], onupdate='CASCADE', ondelete='CASCADE'),
+                        ['role_id'], ['role.id'], onupdate='CASCADE', ondelete='SET NULL'),
                     sa.ForeignKeyConstraint(
-                        ['user_id'], [USER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='CASCADE'),
+                        ['user_id'], [USER_FOREKEY_FIELD], onupdate='CASCADE', ondelete='SET NULL'),
                     sa.PrimaryKeyConstraint('user_id', 'role_id')
                     )
     # ### end Alembic commands ###
@@ -341,11 +341,11 @@ def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
     op.drop_table('user_role')
     op.drop_table('request_event_log')
-    op.drop_table('role')
     op.drop_table('request_org_log')
     op.drop_table('request_member_log')
-    op.drop_table('event')
+    op.drop_table('role')
     op.drop_table('ticket_fare')
+    op.drop_table('event')
     op.drop_table('organization')
     op.drop_table('user')
     op.drop_table('social')
