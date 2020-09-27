@@ -36,6 +36,27 @@ vw_org_approve_status = ReplaceableObject(
     """
 )
 
+
+vw_event_approve_status = ReplaceableObject(
+    "vw_event_approve_status",
+    """
+        SELECT
+            event.id AS event_id,
+            event.name AS event_name,
+            rol.req_type,
+            rol.approve_at,
+            rol.applicant_id,
+            rol.approver_id
+        FROM
+            event
+            LEFT JOIN request_event_log AS rol ON rol.event_id = event.id
+        WHERE
+            event.deleted_at IS NULL
+            AND rol.deleted_at IS NULL
+    """
+)
+
+
 vw_user_permission = ReplaceableObject(
     "vw_user_permission",
     """
@@ -78,9 +99,11 @@ vw_user_permission = ReplaceableObject(
 
 def upgrade():
     op.create_view(vw_org_approve_status)
+    op.create_view(vw_event_approve_status)
     op.create_view(vw_user_permission)
 
 
 def downgrade():
     op.drop_view(vw_org_approve_status)
+    op.drop_view(vw_event_approve_status)
     op.drop_view(vw_user_permission)

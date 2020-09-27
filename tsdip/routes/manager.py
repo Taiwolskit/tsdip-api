@@ -71,37 +71,3 @@ def sign_up():
         'http_status_code': HTTPStatus.CREATED,
         'status': 'SUCCESS',
     }
-
-
-# @api_blueprint.route('', methods=['GET'], strict_slashes=False)
-# @format_response
-# # @jwt_required
-# @check_jwt_user_exist
-# def get_orgs():
-#     """Get organization list.
-
-#     This API only provider for managers
-#     """
-#     params = request.args.to_dict()
-#     page = params.get('page', 1)
-#     limit = params.get('limit', 20)
-
-#     if g.current_user_type != 'manager':
-#         raise OrganizationException('permission_denied')
-
-#     data = g.db_session.query(Organization).filter(
-#         Organization.deleted_at.is_(None)
-#     ).order_by(Organization.created_at.desc())  \
-#         .paginate(
-#             error_out=False,
-#             max_per_page=50,
-#             page=int(page),
-#             per_page=int(limit),
-#     )
-
-#     return {
-#         'code': 'ORG_API_SUCCESS',
-#         'data': [dict(zip(item.keys(), item)) for item in data.items],
-#         'http_status_code': HTTPStatus.CREATED,
-#         'status': 'SUCCESS',
-#     }

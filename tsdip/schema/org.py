@@ -82,15 +82,3 @@ class CreateEventSchema(Schema):
 
     social = fields.Nested(SocialSchema)
     tickets = fields.List(fields.Nested(TicketSchema))
-
-
-class UpdateEventSchema(Schema):
-    """PUT:update_event."""
-
-    name = fields.Str()
-    description = fields.Str()
-    start_at = fields.TimeDelta()
-    end_at = fields.TimeDelta()
-    reg_link = fields.URL()
-    reg_start_at = fields.TimeDelta()
-    reg_end_at = fields.TimeDelta()

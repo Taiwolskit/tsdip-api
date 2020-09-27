@@ -30,6 +30,8 @@ def check_jwt_user_exist(fn):
 
     def wrapper(*args, **kwargs):
         # current_user = get_jwt_identity()
+        # if current_user is None:
+        #     return fn(*args, **kwargs)
         source_table = User
         # if current_user['type'] == 'manager':
         #     source_table = Manager

@@ -73,7 +73,7 @@ def sign_up():
 
     return {
         'code': 'USER_API_SUCCESS',
-        'http_status_code': HTTPStatus.CREATED,
+        'http_status_code': HTTPStatus.ACCEPTED,
         'status': 'SUCCESS',
     }
 
@@ -96,11 +96,9 @@ def log_in():
 @check_jwt_user_exist
 def get_profile():
     """Get user's profile."""
-    result = g.current_user.as_dict(filter_at=True)
-
     return {
         'code': 'USER_API_SUCCESS',
-        'data': result,
+        'data': g.current_user.as_dict(filter_at=True),
         'http_status_code': HTTPStatus.OK,
         'status': 'SUCCESS',
     }
