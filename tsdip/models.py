@@ -86,8 +86,6 @@ class Event(db.Model, Base):
     reg_link = db.Column(db.String(128))
     reg_start_at = db.Column(TIMESTAMP)
     reg_end_at = db.Column(TIMESTAMP)
-
-    approved_at = db.Column(TIMESTAMP)
     published_at = db.Column(TIMESTAMP)
 
     creator_id = db.Column(
@@ -160,7 +158,6 @@ class Organization(db.Model, Base):
         server_default='studio'
     )
 
-    approved_at = db.Column(TIMESTAMP)
     published_at = db.Column(TIMESTAMP)
 
     creator_id = db.Column(
@@ -325,8 +322,7 @@ class RequestEventLog(db.Model, Base):
     """ORM RequestEventLog model."""
 
     req_type = db.Column(
-        ENUM('apply_event', 'publish_event',
-             'unpublish_event', name='req_event_type'),
+        ENUM('apply_event', name='req_event_type'),
         nullable=False,
         server_default='apply_event'
     )
@@ -432,6 +428,33 @@ class VWOrgApproveStatus(ViewBase):
     __table__ = view("vw_org_approve_status", metadata, view_logic)
 
 
+class VWEventApproveStatus(ViewBase):
+    """View: Event approve/publish status."""
+
+    view_logic = select(
+        [
+            Event.id.label('event_id'),
+            Event.name.label('event_name'),
+            Event.published_at.label('published_at'),
+            RequestEventLog.req_type.label('req_type'),
+            RequestEventLog.approve_at.label('approve_at'),
+            RequestEventLog.applicant_id.label('applicant_id'),
+            RequestEventLog.approver_id.label('approver_id'),
+        ],
+        use_labels=True
+    ).select_from(
+        join(
+            RequestEventLog,
+            Event,
+            RequestEventLog.org_id == Event.id
+        )
+    ) \
+        .where(Event.deleted_at.is_(None)) \
+        .where(RequestEventLog.deleted_at.is_(None))
+
+    __table__ = view("vw_event_approve_status", metadata, view_logic)
+
+
 class VWUserPermission(ViewBase):
     """View: User permission relation."""
 
@@ -439,9 +462,9 @@ class VWUserPermission(ViewBase):
         [
             User.id.label('user_id'),
             Role.id.label('role_id'),
+            Role.name.label('role'),
             Role.permission_id.label('permission_id'),
             Role.org_id.label('org_id'),
-            Role.name.label('role'),
         ],
         use_labels=True
     ).select_from(

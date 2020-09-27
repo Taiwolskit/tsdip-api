@@ -117,8 +117,6 @@ def upgrade():
                     sa.Column('description', sa.Text(), nullable=True),
                     sa.Column('org_type', postgresql.ENUM('dance_group', 'studio',
                                                           name='org_type'), server_default='studio', nullable=False),
-                    sa.Column('approved_at', postgresql.TIMESTAMP(),
-                              nullable=True),
                     sa.Column('published_at',
                               postgresql.TIMESTAMP(), nullable=True),
                     sa.Column('creator_id', postgresql.UUID(
@@ -155,8 +153,6 @@ def upgrade():
                     sa.Column('reg_start_at',
                               postgresql.TIMESTAMP(), nullable=True),
                     sa.Column('reg_end_at', postgresql.TIMESTAMP(),
-                              nullable=True),
-                    sa.Column('approved_at', postgresql.TIMESTAMP(),
                               nullable=True),
                     sa.Column('published_at',
                               postgresql.TIMESTAMP(), nullable=True),
@@ -299,7 +295,7 @@ def upgrade():
                               server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
                     sa.Column('deleted_at', postgresql.TIMESTAMP(),
                               nullable=True),
-                    sa.Column('req_type', postgresql.ENUM('apply_event', 'publish_event', 'unpublish_event',
+                    sa.Column('req_type', postgresql.ENUM('apply_event',
                                                           name='req_event_type'), server_default='apply_event', nullable=False),
                     sa.Column('event_id', postgresql.UUID(
                         as_uuid=True), nullable=False),

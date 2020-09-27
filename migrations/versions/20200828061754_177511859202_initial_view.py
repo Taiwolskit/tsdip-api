@@ -43,6 +43,7 @@ vw_event_approve_status = ReplaceableObject(
         SELECT
             event.id AS event_id,
             event.name AS event_name,
+            event.published_at,
             rol.req_type,
             rol.approve_at,
             rol.applicant_id,

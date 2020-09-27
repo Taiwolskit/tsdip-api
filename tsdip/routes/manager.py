@@ -1,11 +1,12 @@
+from datetime import datetime
 from http import HTTPStatus
 
 from flask import Blueprint, g, request
 from sqlalchemy import or_
-
 from tsdip.auth import validate_api_token
 from tsdip.formatter import format_response
-from tsdip.models import Manager
+from tsdip.models import (Event, Manager, Organization, RequestEventLog,
+                          RequestOrgLog)
 from tsdip.schema.manager import ManagerSignUpSchema
 
 api_blueprint = Blueprint('managers', __name__, url_prefix='/managers')
@@ -69,5 +70,73 @@ def sign_up():
     return {
         'code': 'MANAGER_API_SUCCESS',
         'http_status_code': HTTPStatus.CREATED,
+        'status': 'SUCCESS',
+    }
+
+
+@api_blueprint.route('/organizations/<path:org_id>/approve', methods=['PATCH'])
+@format_response
+@validate_api_token
+def approve_organization(org_id):
+    """Approve request org log."""
+    data = request.get_json()
+    approved_at = datetime.utcnow()
+    org = g.db_session.query(Organization).filter(
+        Organization.deleted_at.is_(None),
+        Organization.id == org_id
+    ).one_or_none()
+    if org is None:
+        raise ManagerException()
+
+    req_log = g.db_session.query(RequestOrgLog).filter(
+        RequestOrgLog.org_id == org_id,
+        RequestOrgLog.deleted_at.is_(None),
+        RequestOrgLog.req_type == data.get('req_type')
+    ).one_or_none()
+    if req_log is None:
+        raise ManagerException()
+
+    req_log.approved_at = approved_at
+    req_log.approver_id = g.current_user.id
+    g.db_session.add(req_log)
+    g.db_session.commit()
+
+    return {
+        'code': 'MANAGER_API_SUCCESS',
+        'http_status_code': HTTPStatus.OK,
+        'status': 'SUCCESS',
+    }
+
+
+@api_blueprint.route('/events/<path:event_id>/approve', methods=['PATCH'])
+@format_response
+@validate_api_token
+def approve_event(event_id):
+    """Approve request approve_event log."""
+    data = request.get_json()
+    approved_at = datetime.utcnow()
+    event = g.db_session.query(Event).filter(
+        Event.deleted_at.is_(None),
+        Event.id == event_id
+    ).one_or_none()
+    if event is None:
+        raise ManagerException()
+
+    req_log = g.db_session.query(RequestEventLog).filter(
+        RequestEventLog.event_id == event_id,
+        RequestEventLog.deleted_at.is_(None),
+        RequestEventLog.req_type == data.get('req_type')
+    ).one_or_none()
+    if req_log is None:
+        raise ManagerException()
+
+    req_log.approved_at = approved_at
+    req_log.approver_id = g.current_user.id
+    g.db_session.add(req_log)
+    g.db_session.commit()
+
+    return {
+        'code': 'MANAGER_API_SUCCESS',
+        'http_status_code': HTTPStatus.OK,
         'status': 'SUCCESS',
     }

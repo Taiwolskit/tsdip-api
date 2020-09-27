@@ -45,13 +45,19 @@ def check_org_exist(org_id):
 
 def check_org_approve(org_id):
     """Check organization had been approve or not."""
-    org = g.db_session.query(RequestOrgLog).filter(
-        RequestOrgLog.approve_at.isnot(None),
-        RequestOrgLog.deleted_at.is_(None),
-        RequestOrgLog.org_id == org_id,
-        RequestOrgLog.req_type.in_,
+    # First: Check organization has been approve or not.
+    req_log = g.db_session.query(VWOrgApproveStatus).filter(
+        VWOrgApproveStatus.org_id == org_id,
+        VWOrgApproveStatus.req_type.in_(['apply_org', 'claim_org']),
     ).one_or_none()
-    if org is None:
+
+    # Second: Check organization have approved_at or not
+    if req_log is None:
+        org = check_org_exist(org_id)
+        if org.approved_at is None:
+            raise OrganizationException('organization_not_approve')
+        return org
+    else:
         raise OrganizationException('organization_not_approve')
 
 
@@ -76,12 +82,11 @@ def check_user_permission(org_id, high=False):
 def create_organization():
     """Create organization with social and request log.
 
-    This API will have two situations.
-    First: General user create the organization,
-        it will create request log
+    This API has two situations.
+    First: General user create the organization, it create request log.
+        The user permission create until the request has been approved.
     Second: Manager create the organization,
-        it will not create request log
-    The user permission will create until the request has been approved
+        it won't create request log but set approved at.
     """
     data = request.get_json()
     CreateOrgSchema().load(data)
@@ -112,6 +117,8 @@ def create_organization():
             req_type='apply_org',
         )
         g.db_session.add(req_log)
+    elif g.current_user_type == 'manager':
+        org.approved_at = datetime.utcnow()
 
     g.db_session.commit()
 
@@ -130,9 +137,9 @@ def get_organizations():
     """Get organizations.
 
     This API has three situations.
-    1. For public
-    2. For organization managers
-    3. For admin
+    1. For public, query the org which is not deleted and has been approved.
+    2. For organization users, query the org which the user has permission.
+    3. For admin, query all organizations which are not deleted.
     """
     params = request.args.to_dict()
     GetOrgsSchema().load(params)
@@ -140,34 +147,70 @@ def get_organizations():
     limit = params.get('limit', 20)
     org_type = params.get('org_type', None)
 
+    result = None
     subquery = None
     if g.current_user is None:  # Public
         subquery = g.db_session.query(Organization).filter(
             Organization.deleted_at.is_(None),
             Organization.approved_at.isnot(None)
         )
-    elif g.current_user_type == 'user':  # For organization mangagers
-        subquery = g.db_session.query(
-            VWUserPermission).filter_by(user_id=g.current_user.id)
+        if org_type:
+            subquery = subquery.filter_by(org_type=org_type)
+
+        data = subquery.order_by(Organization.name.desc())  \
+            .paginate(
+                error_out=False,
+                max_per_page=50,
+                page=int(page),
+                per_page=int(limit),
+        )
+        result = {
+            'total': data.total,
+            'pages': data.pages,
+            'items': [org.to_public() for org in data.items]
+        }
+    elif g.current_user_type == 'user':  # For organization users
+        subquery = g.db_session.query(VWUserPermission) \
+            .filter_by(user_id=g.current_user.id) \
+            .outerjoin(Organization, VWUserPermission.org_id == Organization.id)
+        if org_type:
+            subquery = subquery.filter_by(org_type=org_type)
+
+        data = subquery.order_by(Organization.name.desc())  \
+            .paginate(
+                error_out=False,
+                max_per_page=50,
+                page=int(page),
+                per_page=int(limit),
+        )
+        result = {
+            'total': data.total,
+            'pages': data.pages,
+            'items': [org.as_dict() for org in data.items]
+        }
     elif g.current_user_type == 'manager':  # For admin
-        subquery = g.db_session.query(VWOrgApproveStatus)
-    else:
-        raise OrganizationException()
+        subquery = g.db_session.query(Organization).filter(
+            Organization.deleted_at.is_(None)
+        )
+        if org_type:
+            subquery = subquery.filter_by(org_type=org_type)
 
-    if org_type:
-        subquery = subquery.filter_by(org_type=org_type)
-
-    data = subquery.order_by(Organization.name.desc())  \
-        .paginate(
-            error_out=False,
-            max_per_page=50,
-            page=int(page),
-            per_page=int(limit),
-    )
+        data = subquery.order_by(Organization.name.desc())  \
+            .paginate(
+                error_out=False,
+                max_per_page=50,
+                page=int(page),
+                per_page=int(limit),
+        )
+        result = {
+            'total': data.total,
+            'pages': data.pages,
+            'items': [org.as_dict() for org in data.items]
+        }
 
     return {
         'code': 'ORG_API_SUCCESS',
-        'data': [org.to_public() for org in data.items],
+        'data': result,
         'http_status_code': HTTPStatus.OK,
         'status': 'SUCCESS',
     }
@@ -181,9 +224,9 @@ def get_single_organization(org_id):
     """Get single organization.
 
     This API has three situations.
-    1. For public
-    2. For organization managers
-    3. For admin
+    1. For public, query the org which is not deleted and has been approved.
+    2. For organization users, query the org which the user has permission.
+    3. For admin, query all organizations which are not deleted.
     """
     org = check_org_exist(org_id)
 
@@ -202,8 +245,6 @@ def get_single_organization(org_id):
         result = org.as_dict()
         if org.social_id:
             result['social'] = org.social.as_dict()
-    else:
-        raise OrganizationException()
 
     return {
         'code': 'ORG_API_SUCCESS',
@@ -218,12 +259,7 @@ def get_single_organization(org_id):
 @jwt_required
 @check_jwt_user_exist
 def update_organization(org_id):
-    """Update organization description and social.
-
-    This API will have two situations.
-    First: General user update the organization will check permission
-    Second: Manager will update the organization directly
-    """
+    """Update organization description."""
     data = request.get_json()
     UpdateOrgSchema().load(data)
 
@@ -249,12 +285,7 @@ def update_organization(org_id):
 @jwt_required
 @check_jwt_user_exist
 def update_organization_socail(org_id):
-    """Update organization description and social.
-
-    This API will have two situations.
-    First: General user update the organization will check permission
-    Second: Manager will update the organization directly
-    """
+    """Update organization's social."""
     data = request.get_json()
     SocialSchema().load(data)
 
@@ -336,7 +367,7 @@ def create_organization_event(org_id):
     g.db_session.commit()
 
     return {
-        'code': 'EVENT_API_SUCCESS',
+        'code': 'ORG_API_SUCCESS',
         'http_status_code': HTTPStatus.CREATED,
         'status': 'SUCCESS',
     }
