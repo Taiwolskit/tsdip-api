@@ -28,7 +28,7 @@ class TicketSchema(Schema):
 
 
 class CreateOrgSchema(Schema):
-    """POST:create_org."""
+    """POST:create_organization."""
 
     name = fields.Str(required=True)
     org_type = fields.Str(
@@ -39,8 +39,18 @@ class CreateOrgSchema(Schema):
     social = fields.Nested(SocialSchema)
 
 
+class GetOrgsSchema(Schema):
+    """GET:get_organizations."""
+
+    page = fields.Int(validate=validate.Range(min=1))
+    limit = fields.Int(validate=validate.Range(min=1, max=50))
+    org_type = fields.Str(
+        validate=validate.OneOf(['dance_group', 'studio'])
+    )
+
+
 class UpdateOrgSchema(Schema):
-    """POST:update_org."""
+    """POST:update_organization."""
 
     description = fields.Str()
     social = fields.Nested(SocialSchema)
@@ -84,5 +94,3 @@ class UpdateEventSchema(Schema):
     reg_link = fields.URL()
     reg_start_at = fields.TimeDelta()
     reg_end_at = fields.TimeDelta()
-
-    social = fields.Nested(SocialSchema)

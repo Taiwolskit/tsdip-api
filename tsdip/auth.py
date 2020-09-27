@@ -35,7 +35,7 @@ def check_jwt_user_exist(fn):
         #     source_table = Manager
 
         query_user = g.db_session.query(source_table).filter(
-            source_table.id == '70510b83-aaef-4ccd-8471-57296f6b14c2',
+            source_table.id == '297666a2-6571-408b-b16d-4936f48584c2',
             source_table.deleted_at.is_(None)
         ).one_or_none()
         if query_user is None:

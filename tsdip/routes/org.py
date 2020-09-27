@@ -6,13 +6,12 @@ from flask_jwt_extended import jwt_required
 from tsdip.auth import check_jwt_user_exist
 from tsdip.formatter import format_response
 from tsdip.mail import SendGrid
-from sqlalchemy import select
-from tsdip.models import (Event, Organization, RequestEventLog, Role, user_role,
-                          RequestMemberLog, RequestOrgLog, Social, TicketFare,
-                          User, VWUserPermission)
+from tsdip.models import (Event, Organization, RequestEventLog,
+                          RequestMemberLog, RequestOrgLog, Role, Social,
+                          TicketFare, User, VWUserPermission, user_role)
 from tsdip.schema.org import (CreateEventSchema, CreateOrgSchema,
-                              InviteMemberSchema, UpdateEventSchema,
-                              UpdateOrgSchema)
+                              GetOrgsSchema, InviteMemberSchema, SocialSchema,
+                              UpdateEventSchema, UpdateOrgSchema)
 
 api_blueprint = Blueprint('organizations', __name__,
                           url_prefix='/organizations')
@@ -99,11 +98,11 @@ def check_user_permission(org_id, high=False):
         raise OrganizationException('permission_denied')
 
 
-@api_blueprint.route('/create', methods=['POST'])
+@api_blueprint.route('', methods=['POST'], strict_slashes=False)
 @format_response
 @jwt_required
 @check_jwt_user_exist
-def create_org():
+def create_organization():
     """Create organization with social and request log.
 
     This API will have two situations.
@@ -152,25 +151,28 @@ def create_org():
     }
 
 
-@api_blueprint.route('/', methods=['GET'])
+@api_blueprint.route('', methods=['GET'], strict_slashes=False)
 @format_response
-@jwt_required
-@check_jwt_user_exist
-def get_orgs():
+def get_organizations():
     """Get organization list.
 
-    This API only provider for managers
+    This API is for public usage
     """
     params = request.args.to_dict()
+    GetOrgsSchema().load(params)
     page = params.get('page', 1)
     limit = params.get('limit', 20)
+    org_type = params.get('org_type', None)
 
-    if g.current_user_type != 'manager':
-        raise OrganizationException('permission_denied')
+    subquery = g.db_session.query(Organization).filter(
+        Organization.deleted_at.is_(None),
+        Organization.approved_at.isnot(None)
+    )
 
-    data = g.db_session.query(Organization).filter(
-        Organization.deleted_at.is_(None)
-    ).order_by(Organization.created_at.desc())  \
+    if org_type:
+        subquery = subquery.filter_by(org_type=org_type)
+
+    data = subquery.order_by(Organization.name.desc())  \
         .paginate(
             error_out=False,
             max_per_page=50,
@@ -180,8 +182,8 @@ def get_orgs():
 
     return {
         'code': 'ORG_API_SUCCESS',
-        'data': [dict(zip(item.keys(), item)) for item in data.items],
-        'http_status_code': HTTPStatus.CREATED,
+        'data': [org.to_public() for org in data.items],
+        'http_status_code': HTTPStatus.OK,
         'status': 'SUCCESS',
     }
 
@@ -190,7 +192,7 @@ def get_orgs():
 @format_response
 @jwt_required
 @check_jwt_user_exist
-def update_org(org_id):
+def update_organization(org_id):
     """Update organization description and social.
 
     This API will have two situations.
@@ -228,9 +230,10 @@ def update_org(org_id):
 
 @api_blueprint.route('/<path:org_id>/leave', methods=['POST'])
 @format_response
-# @jwt_required
+@jwt_required
 @check_jwt_user_exist
-def leave_org(org_id):
+def leave_organization(org_id):
+    """This API will delete the user_role data."""
     print('1----')
     check_org_exist(org_id)
     check_user_permission(org_id)
@@ -248,7 +251,7 @@ def leave_org(org_id):
             Role.org_id,
             Role.permission_id,
             Role.name
-        ).first()
+    ).first()
 
     g.db_session.execute(
         f"""
@@ -347,17 +350,24 @@ def invite_member(org_id):
 @jwt_required
 @check_jwt_user_exist
 def create_event(org_id):
-    """Create event to organization with social and request log."""
+    """Create event of organization with social, tickets and request log.
+
+    This API will have two situations.
+    First: General user create the data which is include request log
+    Second: Manager create the data which is not include request log
+    """
     data = request.get_json()
     CreateEventSchema().load(data)
-
     check_org_exist(org_id)
     check_user_permission(org_id, True)
 
-    event = Event(org_id=org_id)
+    event = Event(
+        name=data['name'],
+        org_id=org_id
+    )
     event_params = {}
     for (key, value) in data.items():
-        if key in ('name', 'description'):
+        if key == 'description':
             event_params[key] = value
         elif '_at' in key:
             event_params[key] = datetime.utcfromtimestamp(int(value) * 1e-3)
@@ -374,9 +384,11 @@ def create_event(org_id):
     tickets = data.get('tickets', None)
     if tickets:
         for ticket in tickets:
-            ticket_fare = TicketFare()
+            ticket_fare = TicketFare(name=ticket['name'])
             ticket_fare.update(ticket)
             ticket_fare.event_id = event.id
+            if g.current_user_type == 'user':
+                ticket_fare.creator_id = g.current_user.id
             g.db_session.add(ticket_fare)
 
     if g.current_user_type == 'user':
@@ -400,7 +412,7 @@ def create_event(org_id):
 @format_response
 @jwt_required
 @check_jwt_user_exist
-def get_org_events(org_id):
+def get_organization_events(org_id):
     """Get organization's events for dashboard."""
     check_org_exist(org_id)
     check_user_permission(org_id)
@@ -451,7 +463,7 @@ def get_org_events(org_id):
 @jwt_required
 @check_jwt_user_exist
 def update_event(org_id, event_id):
-    """Update event with social."""
+    """Update event."""
     data = request.get_json()
     UpdateEventSchema().load(data)
 
@@ -459,23 +471,39 @@ def update_event(org_id, event_id):
     check_user_permission(org_id, True)
     event = check_event_exist(org_id, event_id)
 
-    event_params = {}
-    for (key, value) in data.items():
-        if key not in ('social'):
-            event_params[key] = value
-    event.update(event_params)
+    event.update(data)
     g.db_session.add(event)
+    g.db_session.commit()
 
-    social_parmas = data.get('social', None)
-    if social_parmas:
-        if event.social:
-            social = event.social
-            social.update(social_parmas)
-        else:
-            social = Social(**social_parmas)
-            g.db_session.add(social)
-            g.db_session.flush()
-            event.social_id = social.id
+    return {
+        'code': 'EVENT_API_SUCCESS',
+        'http_status_code': HTTPStatus.OK,
+        'status': 'SUCCESS',
+    }
+
+
+@api_blueprint.route('/<path:org_id>/events/<path:event_id>/social', methods=['PUT'])
+@format_response
+@jwt_required
+@check_jwt_user_exist
+def update_event_social(org_id, event_id):
+    """Update event's social."""
+    data = request.get_json()
+    SocialSchema().load(data)
+
+    check_org_exist(org_id)
+    check_user_permission(org_id, True)
+    event = check_event_exist(org_id, event_id)
+
+    if event.social_id:
+        social = event.social
+        social.update(data)
+    else:
+        social = Social(**data)
+        g.db_session.add(social)
+        g.db_session.flush()
+        event.social_id = social.id
+        g.db_session.add(event)
 
     g.db_session.commit()
 
@@ -491,7 +519,7 @@ def update_event(org_id, event_id):
 @jwt_required
 @check_jwt_user_exist
 def delete_event(org_id, event_id):
-    """Delete event."""
+    """Delete event, this will include tickets and social."""
     check_org_exist(org_id)
     check_user_permission(org_id, True)
     event = check_event_exist(org_id, event_id)
@@ -503,9 +531,6 @@ def delete_event(org_id, event_id):
     if event.social_id:
         event.social.deleted_at = deleted_at
         g.db_session.add(event.social)
-    for req in event.requests:
-        req.deleted_at = deleted_at
-        g.db_session.add(req)
     for ticket in event.tickets:
         ticket.deleted_at = deleted_at
         g.db_session.add(ticket)

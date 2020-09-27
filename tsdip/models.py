@@ -184,6 +184,17 @@ class Organization(db.Model, Base):
     requests = db.relationship('RequestOrgLog', lazy=True)
     social = db.relationship('Social', uselist=False)
 
+    def to_public(self):
+        """ORM object convert to public data format."""
+        temp = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        del temp['social_id']
+        del temp['approved_at']
+        del temp['created_at']
+        del temp['updated_at']
+        del temp['deleted_at']
+
+        return temp
+
 
 class Permission(db.Model, Base):
     """ORM Permission model."""
