@@ -51,10 +51,10 @@ def check_org_approve(org_id):
         VWOrgApproveStatus.req_type.in_(['apply_org', 'claim_org']),
     ).one_or_none()
 
-    # Second: Check organization have approved_at or not
+    # Second: Check organization have approve_at or not
     if req_log is None:
         org = check_org_exist(org_id)
-        if org.approved_at is None:
+        if org.approve_at is None:
             raise OrganizationException('organization_not_approve')
         return org
     else:
@@ -118,7 +118,7 @@ def create_organization():
         )
         g.db_session.add(req_log)
     elif g.current_user_type == 'manager':
-        org.approved_at = datetime.utcnow()
+        org.approve_at = datetime.utcnow()
 
     g.db_session.commit()
 
@@ -152,7 +152,7 @@ def get_organizations():
     if g.current_user is None:  # Public
         subquery = g.db_session.query(Organization).filter(
             Organization.deleted_at.is_(None),
-            Organization.approved_at.isnot(None)
+            Organization.approve_at.isnot(None)
         )
         if org_type:
             subquery = subquery.filter_by(org_type=org_type)

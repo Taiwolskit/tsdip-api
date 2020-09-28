@@ -80,7 +80,7 @@ def sign_up():
 def approve_organization(org_id):
     """Approve request org log."""
     data = request.get_json()
-    approved_at = datetime.utcnow()
+    approve_at = datetime.utcnow()
     org = g.db_session.query(Organization).filter(
         Organization.deleted_at.is_(None),
         Organization.id == org_id
@@ -96,7 +96,7 @@ def approve_organization(org_id):
     if req_log is None:
         raise ManagerException()
 
-    req_log.approved_at = approved_at
+    req_log.approve_at = approve_at
     req_log.approver_id = g.current_user.id
     g.db_session.add(req_log)
     g.db_session.commit()
@@ -114,7 +114,7 @@ def approve_organization(org_id):
 def approve_event(event_id):
     """Approve request approve_event log."""
     data = request.get_json()
-    approved_at = datetime.utcnow()
+    approve_at = datetime.utcnow()
     event = g.db_session.query(Event).filter(
         Event.deleted_at.is_(None),
         Event.id == event_id
@@ -130,7 +130,7 @@ def approve_event(event_id):
     if req_log is None:
         raise ManagerException()
 
-    req_log.approved_at = approved_at
+    req_log.approve_at = approve_at
     req_log.approver_id = g.current_user.id
     g.db_session.add(req_log)
     g.db_session.commit()

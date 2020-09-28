@@ -157,8 +157,7 @@ class Organization(db.Model, Base):
         nullable=False,
         server_default='studio'
     )
-
-    published_at = db.Column(TIMESTAMP)
+    approve_at = db.Column(TIMESTAMP)
 
     creator_id = db.Column(
         UUID(as_uuid=True),
@@ -185,7 +184,7 @@ class Organization(db.Model, Base):
         """ORM object convert to public data format."""
         temp = {c.name: getattr(self, c.name) for c in self.__table__.columns}
         del temp['social_id']
-        del temp['approved_at']
+        del temp['approve_at']
         del temp['created_at']
         del temp['updated_at']
         del temp['deleted_at']
@@ -446,7 +445,7 @@ class VWEventApproveStatus(ViewBase):
         join(
             RequestEventLog,
             Event,
-            RequestEventLog.org_id == Event.id
+            RequestEventLog.event_id == Event.id
         )
     ) \
         .where(Event.deleted_at.is_(None)) \

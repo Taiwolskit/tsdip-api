@@ -117,7 +117,7 @@ def upgrade():
                     sa.Column('description', sa.Text(), nullable=True),
                     sa.Column('org_type', postgresql.ENUM('dance_group', 'studio',
                                                           name='org_type'), server_default='studio', nullable=False),
-                    sa.Column('published_at',
+                    sa.Column('approve_at',
                               postgresql.TIMESTAMP(), nullable=True),
                     sa.Column('creator_id', postgresql.UUID(
                         as_uuid=True), nullable=True),
