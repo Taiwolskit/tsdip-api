@@ -86,6 +86,7 @@ class Event(db.Model, Base):
     reg_link = db.Column(db.String(128))
     reg_start_at = db.Column(TIMESTAMP)
     reg_end_at = db.Column(TIMESTAMP)
+    approve_at = db.Column(TIMESTAMP)
     published_at = db.Column(TIMESTAMP)
 
     creator_id = db.Column(
@@ -408,6 +409,7 @@ class VWOrgApproveStatus(ViewBase):
             Organization.id.label('org_id'),
             Organization.name.label('org_name'),
             Organization.org_type.label('org_type'),
+            Organization.approve_at.label('org_approve_at'),
             RequestOrgLog.req_type.label('req_type'),
             RequestOrgLog.approve_at.label('approve_at'),
             RequestOrgLog.applicant_id.label('applicant_id'),
@@ -435,6 +437,7 @@ class VWEventApproveStatus(ViewBase):
             Event.id.label('event_id'),
             Event.name.label('event_name'),
             Event.published_at.label('published_at'),
+            Event.approve_at.label('event_approve_at'),
             RequestEventLog.req_type.label('req_type'),
             RequestEventLog.approve_at.label('approve_at'),
             RequestEventLog.applicant_id.label('applicant_id'),

@@ -154,6 +154,8 @@ def upgrade():
                               postgresql.TIMESTAMP(), nullable=True),
                     sa.Column('reg_end_at', postgresql.TIMESTAMP(),
                               nullable=True),
+                    sa.Column('approve_at',
+                              postgresql.TIMESTAMP(), nullable=True),
                     sa.Column('published_at',
                               postgresql.TIMESTAMP(), nullable=True),
                     sa.Column('creator_id', postgresql.UUID(

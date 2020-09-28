@@ -42,11 +42,14 @@ def check_event_exist(event_id):
 
 def check_event_approve(event_id):
     """Check event had been approve or not."""
+    # First: Check event has been approve or not.
     req_log = g.db_session.query(VWEventApproveStatus).filter(
         VWEventApproveStatus.approve_at.isnot(None),
         VWEventApproveStatus.event_id == event_id,
         VWEventApproveStatus.req_type.in_(['apply_event']),
     ).one_or_none()
+
+    # Second: Check event have approve_at or not
     if req_log is None:
         event = check_event_exist(event_id)
         if event.approved_at is None:
