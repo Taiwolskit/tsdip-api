@@ -8,8 +8,8 @@ from tsdip.formatter import format_response
 from tsdip.models import (Event, Organization, RequestEventLog, RequestOrgLog,
                           Social, TicketFare, VWOrgApproveStatus,
                           VWUserPermission)
-from tsdip.organization import (get_user_reviewing_organizations,
-                                get_user_organizations)
+from tsdip.organization import (get_user_organizations,
+                                get_user_reviewing_organizations)
 from tsdip.schema.org import (CreateEventSchema, CreateOrgSchema,
                               GetOrgsSchema, SocialSchema, UpdateOrgSchema)
 

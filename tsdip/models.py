@@ -189,7 +189,6 @@ class Organization(db.Model, Base):
         del temp['created_at']
         del temp['updated_at']
         del temp['deleted_at']
-
         return temp
 
 

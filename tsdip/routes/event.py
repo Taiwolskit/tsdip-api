@@ -2,11 +2,11 @@ from datetime import datetime
 from http import HTTPStatus
 
 from flask import Blueprint, g, request
-from flask_jwt_extended import jwt_required, jwt_optional
+from flask_jwt_extended import jwt_optional, jwt_required
 from tsdip.auth import check_jwt_user_exist
 from tsdip.formatter import format_response
-from tsdip.models import (Event, RequestEventLog, Social, TicketFare, VWEventApproveStatus,
-                          VWUserPermission)
+from tsdip.models import (Event, RequestEventLog, Social, TicketFare,
+                          VWEventApproveStatus, VWUserPermission)
 from tsdip.schema.event import (SocialSchema, TicketSchema, UpdateEventSchema,
                                 UpdateTicketSchema)
 
@@ -105,7 +105,7 @@ def get_events():
             .filter(
                 Event.deleted_at.is_(None),
                 VWUserPermission.user_id == g.current_user.id
-            ) \
+        ) \
             .outerjoin(Event, VWUserPermission.org_id == Event.org_id) \
             .outerjoin(RequestEventLog, RequestEventLog.event_id == Event.id) \
             .with_entities(
@@ -114,14 +114,14 @@ def get_events():
                 RequestEventLog.approve_at,
                 VWUserPermission.org_type,
                 VWUserPermission.org_id
-            ) \
+        ) \
             .order_by(Event.name.desc())  \
             .paginate(
                 error_out=False,
                 max_per_page=50,
                 page=int(page),
                 per_page=int(limit),
-            )
+        )
 
         result = {
             'total': data.total,

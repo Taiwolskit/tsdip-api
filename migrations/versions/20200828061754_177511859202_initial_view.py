@@ -6,7 +6,6 @@ Create Date: 2020-08-28 06:17:54.471238
 
 """
 from alembic import op
-
 from tsdip.view import ReplaceableObject
 
 # revision identifiers, used by Alembic.
