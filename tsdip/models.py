@@ -221,7 +221,8 @@ class Role(db.Model, Base):
     )
     permission_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('permission.id', onupdate='CASCADE', ondelete='SET NULL'),
+        db.ForeignKey('permission.id', onupdate='CASCADE',
+                      ondelete='SET NULL'),
         nullable=False
     )
 
@@ -428,6 +429,10 @@ class VWOrgApproveStatus(ViewBase):
 
     __table__ = view("vw_org_approve_status", metadata, view_logic)
 
+    def as_dict(self):
+        """ORM model base convert object to dict function."""
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
 
 class VWEventApproveStatus(ViewBase):
     """View: Event approve/publish status."""
@@ -455,6 +460,10 @@ class VWEventApproveStatus(ViewBase):
         .where(RequestEventLog.deleted_at.is_(None))
 
     __table__ = view("vw_event_approve_status", metadata, view_logic)
+
+    def as_dict(self):
+        """ORM model base convert object to dict function."""
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 
 class VWUserPermission(ViewBase):
@@ -496,3 +505,7 @@ class VWUserPermission(ViewBase):
         .where(Organization.deleted_at.is_(None))
 
     __table__ = view("vw_user_permission", metadata, view_logic)
+
+    def as_dict(self):
+        """ORM model base convert object to dict function."""
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}

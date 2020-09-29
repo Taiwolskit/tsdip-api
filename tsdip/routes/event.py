@@ -2,10 +2,10 @@ from datetime import datetime
 from http import HTTPStatus
 
 from flask import Blueprint, g, request
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, jwt_optional
 from tsdip.auth import check_jwt_user_exist
 from tsdip.formatter import format_response
-from tsdip.models import (Event, Social, TicketFare, VWEventApproveStatus,
+from tsdip.models import (Event, RequestEventLog, Social, TicketFare, VWEventApproveStatus,
                           VWUserPermission)
 from tsdip.schema.event import (SocialSchema, TicketSchema, UpdateEventSchema,
                                 UpdateTicketSchema)
@@ -52,7 +52,7 @@ def check_event_approve(event_id):
     # Second: Check event have approve_at or not
     if req_log is None:
         event = check_event_exist(event_id)
-        if event.approved_at is None:
+        if event.approve_at is None:
             raise EventException('event_not_approve')
         return event
     else:
@@ -75,27 +75,75 @@ def check_user_permission(org_id, high=False):
 
 @api_blueprint.route('', methods=['GET'], strict_slashes=False)
 @format_response
+@jwt_optional
+@check_jwt_user_exist
 def get_events():
     """Get events."""
     params = request.args.to_dict()
     page = params.get('page', 1)
     limit = params.get('limit', 20)
 
-    data = g.db_session.query(Event).filter(
-        Event.deleted_at.is_(None),
-        Event.published_at.isnot(None)
-    ).order_by(Event.name.desc())  \
-        .paginate(
-            error_out=False,
-            max_per_page=50,
-            page=int(page),
-            per_page=int(limit),
-    )
-    result = {
-        'total': data.total,
-        'pages': data.pages,
-        'items': [event.as_dict() for event in data.items]
-    }
+    result = None
+    if g.current_user is None:
+        data = g.db_session.query(Event).filter(
+            Event.deleted_at.is_(None),
+            Event.published_at.isnot(None)
+        ).order_by(Event.name.desc())  \
+            .paginate(
+                error_out=False,
+                max_per_page=50,
+                page=int(page),
+                per_page=int(limit),
+        )
+        result = {
+            'total': data.total,
+            'pages': data.pages,
+            'items': [event.as_dict() for event in data.items]
+        }
+    elif g.current_user_type == 'user':  # For organization users
+        data = g.db_session.query(VWUserPermission) \
+            .filter(
+                Event.deleted_at.is_(None),
+                VWUserPermission.user_id == g.current_user.id
+            ) \
+            .outerjoin(Event, VWUserPermission.org_id == Event.org_id) \
+            .outerjoin(RequestEventLog, RequestEventLog.event_id == Event.id) \
+            .with_entities(
+                Event.id,
+                Event.name,
+                RequestEventLog.approve_at,
+                VWUserPermission.org_type,
+                VWUserPermission.org_id
+            ) \
+            .order_by(Event.name.desc())  \
+            .paginate(
+                error_out=False,
+                max_per_page=50,
+                page=int(page),
+                per_page=int(limit),
+            )
+
+        result = {
+            'total': data.total,
+            'pages': data.pages,
+            'items': [dict(zip(event.keys(), event)) for event in data.items]
+        }
+
+    elif g.current_user_type == 'manager':
+        data = g.db_session.query(Event).filter(
+            Event.deleted_at.is_(None)
+        ).order_by(Event.name.desc())  \
+            .paginate(
+                error_out=False,
+                max_per_page=50,
+                page=int(page),
+                per_page=int(limit),
+        )
+        result = {
+            'total': data.total,
+            'pages': data.pages,
+            'items': [event.as_dict() for event in data.items]
+        }
 
     return {
         'code': 'EVENT_API_SUCCESS',
@@ -107,15 +155,25 @@ def get_events():
 
 @api_blueprint.route('/<path:event_id>', methods=['GET'])
 @format_response
+@jwt_optional
+@check_jwt_user_exist
 def get_single_event(event_id):
     """Get single event."""
-    event = check_event_exist(event_id)
-    check_user_permission(event.org_id)
+    event = None
+    if g.current_user is None:
+        event = check_event_approve(event_id)
+    elif g.current_user_type == 'user':
+        event = check_event_exist(event_id)
+        check_user_permission(event.org_id)
 
-    result = event.as_dict()
-    if event.social_id:
-        result['social'] = event.social.as_dict()
-    result['tickets'] = [ticket.as_dict() for ticket in event.tickets]
+    if event:
+        result = event.as_dict()
+        if event.social_id:
+            result['social'] = event.social.as_dict()
+        result['tickets'] = [ticket.as_dict() for ticket in event.tickets]
+    else:
+        result = event
+
     return {
         'code': 'EVENT_API_SUCCESS',
         'data': result,
@@ -190,7 +248,7 @@ def create_event_tickets(event_id):
     check_user_permission(event.org_id, True)
 
     for params in data:
-        TicketSchema().load(data)
+        TicketSchema().load(params)
         ticket = TicketFare(
             name=params['name'],
             event_id=event_id
@@ -248,7 +306,7 @@ def publish_events():
     published_at = datetime.utcnow()
 
     for event_id in data:
-        event = check_event_exist(event_id)
+        event = check_event_approve(event_id)
         check_user_permission(event.org_id, True)
         event.published_at = published_at
         g.db_session.add(event)
@@ -271,7 +329,7 @@ def un_publish_events():
     data = request.get_json()
 
     for event_id in data:
-        event = check_event_exist(event_id)
+        event = check_event_approve(event_id)
         check_user_permission(event.org_id, True)
         event.published_at = None
         g.db_session.add(event)

@@ -33,12 +33,13 @@ def check_jwt_user_exist(fn):
         if current_user is None:
             g.current_user = None
             return fn(*args, **kwargs)
+
         source_table = User
-        # if current_user['type'] == 'manager':
-        #     source_table = Manager
+        if current_user['type'] == 'manager':
+            source_table = Manager
 
         query_user = g.db_session.query(source_table).filter(
-            source_table.id == '297666a2-6571-408b-b16d-4936f48584c2',
+            source_table.id == current_user['id'],
             source_table.deleted_at.is_(None)
         ).one_or_none()
         if query_user is None:
@@ -47,9 +48,9 @@ def check_jwt_user_exist(fn):
                 'http_status_code': HTTPStatus.FORBIDDEN,
                 'status': 'WARN',
             }
+
         g.current_user = query_user
-        g.current_user_type = 'user'
-        # g.current_user_type = current_user['type']
+        g.current_user_type = current_user['type']
         return fn(*args, **kwargs)
 
     wrapper.__name__ = fn.__name__

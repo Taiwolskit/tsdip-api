@@ -47,6 +47,7 @@ class GetOrgsSchema(Schema):
     org_type = fields.Str(
         validate=validate.OneOf(['dance_group', 'studio'])
     )
+    reviewing = fields.Bool()
 
 
 class UpdateOrgSchema(Schema):

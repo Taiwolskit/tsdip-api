@@ -2,11 +2,13 @@ from datetime import datetime
 from http import HTTPStatus
 
 from flask import Blueprint, g, request
+from flask_jwt_extended import (create_access_token, create_refresh_token,
+                                jwt_required)
 from sqlalchemy import or_
-from tsdip.auth import validate_api_token
+from tsdip.auth import check_jwt_user_exist, validate_api_token
 from tsdip.formatter import format_response
-from tsdip.models import (Event, Manager, Organization, RequestEventLog,
-                          RequestOrgLog)
+from tsdip.models import (Event, Manager, Organization, Permission,
+                          RequestEventLog, RequestOrgLog, Role, User)
 from tsdip.schema.manager import ManagerSignUpSchema
 
 api_blueprint = Blueprint('managers', __name__, url_prefix='/managers')
@@ -74,20 +76,50 @@ def sign_up():
     }
 
 
+@api_blueprint.route('/login', methods=['POST'])
+@format_response
+@validate_api_token
+def log_in():
+    """Log in an manager."""
+    # TODO: Create jwt token and return
+    manager = g.db_session.query(Manager).filter(
+        Manager.deleted_at.is_(None)
+    ).first()
+    result = manager.as_dict()
+    result['type'] = 'manager'
+
+    return {
+        'code': 'USER_API_SUCCESS',
+        'data': {
+            'access_token': create_access_token(identity=result, fresh=True),
+            'refresh_token': create_refresh_token(identity=result)
+        },
+        'http_status_code': HTTPStatus.OK,
+        'status': 'SUCCESS',
+    }
+
+
 @api_blueprint.route('/organizations/<path:org_id>/approve', methods=['PATCH'])
 @format_response
 @validate_api_token
+@jwt_required
+@check_jwt_user_exist
 def approve_organization(org_id):
     """Approve request org log."""
     data = request.get_json()
     approve_at = datetime.utcnow()
+
+    # First: Check organization exist
     org = g.db_session.query(Organization).filter(
         Organization.deleted_at.is_(None),
         Organization.id == org_id
     ).one_or_none()
     if org is None:
         raise ManagerException()
+    org.approve_at = approve_at
+    g.db_session.add(org)
 
+    # Second: Find request
     req_log = g.db_session.query(RequestOrgLog).filter(
         RequestOrgLog.org_id == org_id,
         RequestOrgLog.deleted_at.is_(None),
@@ -96,9 +128,30 @@ def approve_organization(org_id):
     if req_log is None:
         raise ManagerException()
 
+    # Third: Check applicant exist and save approve
+    user = g.db_session.query(User).filter(
+        User.deleted_at.is_(None),
+        User.id == req_log.applicant_id
+    ).one_or_none()
+    if user is None:
+        raise ManagerException()
+
     req_log.approve_at = approve_at
     req_log.approver_id = g.current_user.id
     g.db_session.add(req_log)
+
+    # Fourth: Create permission relation
+    permission = Permission(manage_member=True)
+    g.db_session.add(permission)
+    g.db_session.flush()
+
+    role = Role(
+        name='owner',
+        org_id=org_id,
+        permission_id=permission.id,
+    )
+    user.roles.append(role)
+    g.db_session.add(role)
     g.db_session.commit()
 
     return {
@@ -111,6 +164,8 @@ def approve_organization(org_id):
 @api_blueprint.route('/events/<path:event_id>/approve', methods=['PATCH'])
 @format_response
 @validate_api_token
+@jwt_required
+@check_jwt_user_exist
 def approve_event(event_id):
     """Approve request approve_event log."""
     data = request.get_json()

@@ -8,6 +8,8 @@ from tsdip.formatter import format_response
 from tsdip.models import (Event, Organization, RequestEventLog, RequestOrgLog,
                           Social, TicketFare, VWOrgApproveStatus,
                           VWUserPermission)
+from tsdip.organization import (get_user_reviewing_organizations,
+                                get_user_organizations)
 from tsdip.schema.org import (CreateEventSchema, CreateOrgSchema,
                               GetOrgsSchema, SocialSchema, UpdateOrgSchema)
 
@@ -116,6 +118,8 @@ def create_organization():
             org_id=org.id,
             req_type='apply_org',
         )
+        org.creator_id = g.current_user.id
+        g.db_session.add(org)
         g.db_session.add(req_log)
     elif g.current_user_type == 'manager':
         org.approve_at = datetime.utcnow()
@@ -170,24 +174,13 @@ def get_organizations():
             'items': [org.to_public() for org in data.items]
         }
     elif g.current_user_type == 'user':  # For organization users
-        subquery = g.db_session.query(VWUserPermission) \
-            .filter_by(user_id=g.current_user.id) \
-            .outerjoin(Organization, VWUserPermission.org_id == Organization.id)
-        if org_type:
-            subquery = subquery.filter_by(org_type=org_type)
-
-        data = subquery.order_by(Organization.name.desc())  \
-            .paginate(
-                error_out=False,
-                max_per_page=50,
-                page=int(page),
-                per_page=int(limit),
-        )
-        result = {
-            'total': data.total,
-            'pages': data.pages,
-            'items': [org.as_dict() for org in data.items]
-        }
+        reviewing = params.get('reviewing', None)
+        if reviewing:
+            result = get_user_reviewing_organizations(
+                g.current_user.id, page, limit, org_type)
+        else:
+            result = get_user_organizations(
+                g.current_user.id, page, limit, org_type)
     elif g.current_user_type == 'manager':  # For admin
         subquery = g.db_session.query(Organization).filter(
             Organization.deleted_at.is_(None)
@@ -357,6 +350,9 @@ def create_organization_event(org_id):
             g.db_session.add(ticket_fare)
 
     if g.current_user_type == 'user':
+        event.creator_id = g.current_user.id
+        g.db_session.add(event)
+
         req_log = RequestEventLog(
             event_id=event.id,
             req_type='apply_event',

@@ -1,7 +1,8 @@
 from http import HTTPStatus
 
 from flask import Blueprint, g, request
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import (create_access_token, create_refresh_token,
+                                jwt_required)
 from sqlalchemy import or_
 from tsdip.auth import check_jwt_user_exist
 from tsdip.formatter import format_response
@@ -30,8 +31,8 @@ def check_user_data_used(data, user_id=None):
     username = data.get('username', None)
 
     source_table = User
-    if g.current_user_type == 'manager':
-        source_table = Manager
+    # if g.current_user_type == 'manager':
+    #     source_table = Manager
 
     or_select = []
     if email:
@@ -83,8 +84,18 @@ def sign_up():
 def log_in():
     """Log in an user."""
     # TODO: Create jwt token and return
+    user = g.db_session.query(User).filter(
+        User.deleted_at.is_(None)
+    ).first()
+    result = user.as_dict()
+    result['type'] = 'user'
+
     return {
         'code': 'USER_API_SUCCESS',
+        'data': {
+            'access_token': create_access_token(identity=result, fresh=True),
+            'refresh_token': create_refresh_token(identity=result)
+        },
         'http_status_code': HTTPStatus.OK,
         'status': 'SUCCESS',
     }
