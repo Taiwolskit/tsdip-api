@@ -26,6 +26,14 @@ class TicketSchema(Schema):
     reg_end_at = fields.TimeDelta()
 
 
+class GetEventsSchema(Schema):
+    """GET:get_events."""
+
+    page = fields.Int(validate=validate.Range(min=1))
+    limit = fields.Int(validate=validate.Range(min=1, max=50))
+    page_size = fields.Int(validate=validate.Range(min=1, max=50))
+
+
 class UpdateEventSchema(Schema):
     """PUT:update_event."""
 

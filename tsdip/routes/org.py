@@ -149,6 +149,7 @@ def get_organizations():
     GetOrgsSchema().load(params)
     page = params.get('page', 1)
     limit = params.get('limit', 20)
+    page_size = params.get('page_size', 50)
     org_type = params.get('org_type', None)
 
     result = None
@@ -164,12 +165,13 @@ def get_organizations():
         data = subquery.order_by(Organization.name.desc())  \
             .paginate(
                 error_out=False,
-                max_per_page=50,
+                max_per_page=int(page_size),
                 page=int(page),
                 per_page=int(limit),
         )
         result = {
             'total': data.total,
+            'page': data.page,
             'pages': data.pages,
             'items': [org.to_public() for org in data.items]
         }
@@ -177,10 +179,10 @@ def get_organizations():
         reviewing = params.get('reviewing', None)
         if reviewing:
             result = get_user_reviewing_organizations(
-                g.current_user.id, page, limit, org_type)
+                g.current_user.id, page, limit, page_size, org_type)
         else:
             result = get_user_organizations(
-                g.current_user.id, page, limit, org_type)
+                g.current_user.id, page, limit, page_size, org_type)
     elif g.current_user_type == 'manager':  # For admin
         subquery = g.db_session.query(Organization).filter(
             Organization.deleted_at.is_(None)
@@ -191,12 +193,13 @@ def get_organizations():
         data = subquery.order_by(Organization.name.desc())  \
             .paginate(
                 error_out=False,
-                max_per_page=50,
+                max_per_page=int(page_size),
                 page=int(page),
                 per_page=int(limit),
         )
         result = {
             'total': data.total,
+            'page': data.page,
             'pages': data.pages,
             'items': [org.as_dict() for org in data.items]
         }

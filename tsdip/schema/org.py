@@ -44,6 +44,7 @@ class GetOrgsSchema(Schema):
 
     page = fields.Int(validate=validate.Range(min=1))
     limit = fields.Int(validate=validate.Range(min=1, max=50))
+    page_size = fields.Int(validate=validate.Range(min=1, max=50))
     org_type = fields.Str(
         validate=validate.OneOf(['dance_group', 'studio'])
     )

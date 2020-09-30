@@ -5,10 +5,11 @@ from flask import Blueprint, g, request
 from flask_jwt_extended import jwt_optional, jwt_required
 from tsdip.auth import check_jwt_user_exist
 from tsdip.formatter import format_response
-from tsdip.models import (Event, RequestEventLog, Social, TicketFare,
-                          VWEventApproveStatus, VWUserPermission)
-from tsdip.schema.event import (SocialSchema, TicketSchema, UpdateEventSchema,
-                                UpdateTicketSchema)
+from tsdip.models import (Event, Organization, RequestEventLog, Social,
+                          TicketFare, User, VWEventApproveStatus,
+                          VWUserPermission)
+from tsdip.schema.event import (GetEventsSchema, SocialSchema, TicketSchema,
+                                UpdateEventSchema, UpdateTicketSchema)
 
 api_blueprint = Blueprint('events', __name__, url_prefix='/events')
 
@@ -80,8 +81,10 @@ def check_user_permission(org_id, high=False):
 def get_events():
     """Get events."""
     params = request.args.to_dict()
+    GetEventsSchema().load(params)
     page = params.get('page', 1)
     limit = params.get('limit', 20)
+    page_size = params.get('page_size', 50)
 
     result = None
     if g.current_user is None:
@@ -91,12 +94,13 @@ def get_events():
         ).order_by(Event.name.desc())  \
             .paginate(
                 error_out=False,
-                max_per_page=50,
+                max_per_page=int(page_size),
                 page=int(page),
                 per_page=int(limit),
         )
         result = {
             'total': data.total,
+            'page': data.page,
             'pages': data.pages,
             'items': [event.as_dict() for event in data.items]
         }
@@ -108,25 +112,31 @@ def get_events():
         ) \
             .outerjoin(Event, VWUserPermission.org_id == Event.org_id) \
             .outerjoin(RequestEventLog, RequestEventLog.event_id == Event.id) \
+            .outerjoin(Organization, Organization.id == VWUserPermission.org_id) \
+            .outerjoin(User, User.id == Event.creator_id) \
             .with_entities(
                 Event.id,
+                Organization.name.label('org_name'),
+                Organization.org_type,
                 Event.name,
+                User.username,
+                Event.updated_at,
                 RequestEventLog.approve_at,
-                VWUserPermission.org_type,
-                VWUserPermission.org_id
+                Event.published_at,
         ) \
             .order_by(Event.name.desc())  \
             .paginate(
                 error_out=False,
-                max_per_page=50,
+                max_per_page=int(page_size),
                 page=int(page),
                 per_page=int(limit),
         )
 
         result = {
             'total': data.total,
+            'page': data.page,
             'pages': data.pages,
-            'items': [dict(zip(event.keys(), event)) for event in data.items]
+            'items': [dict(zip(item.keys(), item)) for item in data.items]
         }
 
     elif g.current_user_type == 'manager':
@@ -135,12 +145,13 @@ def get_events():
         ).order_by(Event.name.desc())  \
             .paginate(
                 error_out=False,
-                max_per_page=50,
+                max_per_page=int(page_size),
                 page=int(page),
                 per_page=int(limit),
         )
         result = {
             'total': data.total,
+            'page': data.page,
             'pages': data.pages,
             'items': [event.as_dict() for event in data.items]
         }
