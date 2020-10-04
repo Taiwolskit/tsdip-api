@@ -173,7 +173,7 @@ def get_single_event(event_id):
     event = None
     if g.current_user is None:
         event = check_event_approve(event_id)
-    elif g.current_user_type == 'user':
+    else:
         event = check_event_exist(event_id)
         check_user_permission(event.org_id)
 

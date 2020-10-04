@@ -170,19 +170,30 @@ def approve_event(event_id):
     """Approve request approve_event log."""
     data = request.get_json()
     approve_at = datetime.utcnow()
+
+    # First: Check event exist
     event = g.db_session.query(Event).filter(
-        Event.deleted_at.is_(None),
-        Event.id == event_id
+        Event.id == event_id,
+        Event.deleted_at.is_(None)
     ).one_or_none()
     if event is None:
         raise ManagerException()
 
+    # Second: Find request
     req_log = g.db_session.query(RequestEventLog).filter(
         RequestEventLog.event_id == event_id,
         RequestEventLog.deleted_at.is_(None),
         RequestEventLog.req_type == data.get('req_type')
     ).one_or_none()
     if req_log is None:
+        raise ManagerException()
+
+    # Third: Check applicant exist and save approve
+    user = g.db_session.query(User).filter(
+        User.deleted_at.is_(None),
+        User.id == req_log.applicant_id
+    ).one_or_none()
+    if user is None:
         raise ManagerException()
 
     req_log.approve_at = approve_at
