@@ -19,6 +19,7 @@ vw_org_approve_status = ReplaceableObject(
     "vw_org_approve_status",
     """
         SELECT
+            rol.id AS req_id,
             org.id AS org_id,
             org.name AS org_name,
             org.org_type,
@@ -41,6 +42,7 @@ vw_event_approve_status = ReplaceableObject(
     "vw_event_approve_status",
     """
         SELECT
+            rol.id AS req_id,
             event.id AS event_id,
             event.name AS event_name,
             event.published_at,

@@ -177,7 +177,7 @@ def get_event_requests():
     limit = params.get('limit', 20)
     page_size = params.get('page_size', 50)
 
-    if g.current_user['type'] != 'manager':
+    if g.current_user_type != 'manager':
         raise EventException('permission_denied')
 
     data = g.db_session.query(VWEventApproveStatus) \

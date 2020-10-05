@@ -406,6 +406,7 @@ class VWOrgApproveStatus(ViewBase):
 
     view_logic = select(
         [
+            RequestOrgLog.id.label('req_id'),
             Organization.id.label('org_id'),
             Organization.name.label('org_name'),
             Organization.org_type.label('org_type'),
@@ -438,6 +439,7 @@ class VWEventApproveStatus(ViewBase):
 
     view_logic = select(
         [
+            RequestEventLog.id.label('req_id'),
             Event.id.label('event_id'),
             Event.name.label('event_name'),
             Event.published_at.label('published_at'),

@@ -226,7 +226,7 @@ def get_organization_requests():
     page_size = params.get('page_size', 50)
     org_type = params.get('org_type', None)
 
-    if g.current_user['type'] != 'manager':
+    if g.current_user_type != 'manager':
         raise OrganizationException('permission_denied')
 
     subquery = g.db_session.query(VWOrgApproveStatus).order_by(
