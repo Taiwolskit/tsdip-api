@@ -3,7 +3,7 @@ from http import HTTPStatus
 
 from flask import Blueprint, g, request
 from flask_jwt_extended import jwt_optional, jwt_required
-from tsdip.auth import check_jwt_user_exist
+from tsdip.auth import check_jwt_user_exist, validate_api_token
 from tsdip.formatter import format_response
 from tsdip.models import (Event, Organization, RequestEventLog, RequestOrgLog,
                           Social, TicketFare, VWOrgApproveStatus,
@@ -203,6 +203,51 @@ def get_organizations():
             'pages': data.pages,
             'items': [org.as_dict() for org in data.items]
         }
+
+    return {
+        'code': 'ORG_API_SUCCESS',
+        'data': result,
+        'http_status_code': HTTPStatus.OK,
+        'status': 'SUCCESS',
+    }
+
+
+@api_blueprint.route('/requests', methods=['GET'])
+@format_response
+@validate_api_token
+@jwt_required
+@check_jwt_user_exist
+def get_organization_requests():
+    """Get organization request log."""
+    params = request.args.to_dict()
+    GetOrgsSchema().load(params)
+    page = params.get('page', 1)
+    limit = params.get('limit', 20)
+    page_size = params.get('page_size', 50)
+    org_type = params.get('org_type', None)
+
+    if g.current_user['type'] != 'manager':
+        raise OrganizationException('permission_denied')
+
+    subquery = g.db_session.query(VWOrgApproveStatus).order_by(
+        VWOrgApproveStatus.org_name.desc())
+
+    if org_type:
+        subquery = subquery.filter(VWOrgApproveStatus.org_type == org_type)
+
+    data = subquery.paginate(
+        error_out=False,
+        max_per_page=int(page_size),
+        page=int(page),
+        per_page=int(limit),
+    )
+
+    result = {
+        'total': data.total,
+        'page': data.page,
+        'pages': data.pages,
+        'items': [item.as_dict() for item in data.items]
+    }
 
     return {
         'code': 'ORG_API_SUCCESS',

@@ -3,7 +3,7 @@ from http import HTTPStatus
 
 from flask import Blueprint, g, request
 from flask_jwt_extended import jwt_optional, jwt_required
-from tsdip.auth import check_jwt_user_exist
+from tsdip.auth import check_jwt_user_exist, validate_api_token
 from tsdip.formatter import format_response
 from tsdip.models import (Event, Organization, RequestEventLog, Social,
                           TicketFare, User, VWEventApproveStatus,
@@ -155,6 +155,46 @@ def get_events():
             'pages': data.pages,
             'items': [event.as_dict() for event in data.items]
         }
+
+    return {
+        'code': 'EVENT_API_SUCCESS',
+        'data': result,
+        'http_status_code': HTTPStatus.OK,
+        'status': 'SUCCESS',
+    }
+
+
+@api_blueprint.route('/requests', methods=['GET'])
+@format_response
+@validate_api_token
+@jwt_required
+@check_jwt_user_exist
+def get_event_requests():
+    """Get event request log."""
+    params = request.args.to_dict()
+    GetEventsSchema().load(params)
+    page = params.get('page', 1)
+    limit = params.get('limit', 20)
+    page_size = params.get('page_size', 50)
+
+    if g.current_user['type'] != 'manager':
+        raise EventException('permission_denied')
+
+    data = g.db_session.query(VWEventApproveStatus) \
+        .order_by(VWEventApproveStatus.event_name.desc()) \
+        .paginate(
+        error_out=False,
+        max_per_page=int(page_size),
+        page=int(page),
+        per_page=int(limit),
+    )
+
+    result = {
+        'total': data.total,
+        'page': data.page,
+        'pages': data.pages,
+        'items': [item.as_dict() for item in data.items]
+    }
 
     return {
         'code': 'EVENT_API_SUCCESS',
