@@ -88,5 +88,4 @@ def format_success_response(code, status='SUCCESS', data=None):
             'url': request.url,
             'body': request.get_json(silent=True),
         }
-
     return res

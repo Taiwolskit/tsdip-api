@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
@@ -28,8 +30,8 @@ def create_app(config=None):
     app.register_blueprint(org_blueprint)
     app.register_blueprint(user_blueprint)
 
-    @app.route('/hello')
-    def hello_world():
-        return jsonify({'text': 'Hello, World!'})
+    @app.route('/')
+    def healthz():
+        return jsonify(success=True, status=HTTPStatus.OK)
 
     return app
