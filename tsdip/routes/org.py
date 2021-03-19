@@ -2,7 +2,7 @@ from datetime import datetime
 from http import HTTPStatus
 
 from flask import Blueprint, g, request
-from flask_jwt_extended import jwt_optional, jwt_required
+from flask_jwt_extended import jwt_required
 from tsdip.auth import check_jwt_user_exist, validate_api_token
 from tsdip.formatter import format_response
 from tsdip.models import (Event, Organization, RequestEventLog, RequestOrgLog,
@@ -79,7 +79,7 @@ def check_user_permission(org_id, high=False):
 
 @api_blueprint.route('', methods=['POST'], strict_slashes=False)
 @format_response
-@jwt_required
+@jwt_required()
 @check_jwt_user_exist
 def create_organization():
     """Create organization with social and request log.
@@ -135,7 +135,7 @@ def create_organization():
 
 @api_blueprint.route('', methods=['GET'], strict_slashes=False)
 @format_response
-@jwt_optional
+@jwt_required(optional=True)
 @check_jwt_user_exist
 def get_organizations():
     """Get organizations.
@@ -215,7 +215,7 @@ def get_organizations():
 @api_blueprint.route('/requests', methods=['GET'])
 @format_response
 @validate_api_token
-@jwt_required
+@jwt_required()
 @check_jwt_user_exist
 def get_organization_requests():
     """Get organization request log."""
@@ -259,7 +259,7 @@ def get_organization_requests():
 
 @api_blueprint.route('/<path:org_id>', methods=['GET'])
 @format_response
-@jwt_optional
+@jwt_required(optional=True)
 @check_jwt_user_exist
 def get_single_organization(org_id):
     """Get single organization.
@@ -297,7 +297,7 @@ def get_single_organization(org_id):
 
 @api_blueprint.route('/<path:org_id>', methods=['PUT'])
 @format_response
-@jwt_required
+@jwt_required()
 @check_jwt_user_exist
 def update_organization(org_id):
     """Update organization description."""
@@ -323,7 +323,7 @@ def update_organization(org_id):
 
 @api_blueprint.route('/<path:org_id>/social', methods=['PUT'])
 @format_response
-@jwt_required
+@jwt_required()
 @check_jwt_user_exist
 def update_organization_socail(org_id):
     """Update organization's social."""
@@ -353,7 +353,7 @@ def update_organization_socail(org_id):
 
 @api_blueprint.route('/<path:org_id>/events', methods=['POST'])
 @format_response
-@jwt_required
+@jwt_required()
 @check_jwt_user_exist
 def create_organization_event(org_id):
     """Create event of organization with social, tickets and request log.

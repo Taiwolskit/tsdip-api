@@ -102,7 +102,7 @@ def log_in():
 @api_blueprint.route('/organizations/<path:org_id>/approve', methods=['PATCH'])
 @format_response
 @validate_api_token
-@jwt_required
+@jwt_required()
 @check_jwt_user_exist
 def approve_organization(org_id):
     """Approve request org log."""
@@ -164,7 +164,7 @@ def approve_organization(org_id):
 @api_blueprint.route('/events/<path:event_id>/approve', methods=['PATCH'])
 @format_response
 @validate_api_token
-@jwt_required
+@jwt_required()
 @check_jwt_user_exist
 def approve_event(event_id):
     """Approve request approve_event log."""

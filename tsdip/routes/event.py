@@ -2,7 +2,7 @@ from datetime import datetime
 from http import HTTPStatus
 
 from flask import Blueprint, g, request
-from flask_jwt_extended import jwt_optional, jwt_required
+from flask_jwt_extended import jwt_required
 from tsdip.auth import check_jwt_user_exist, validate_api_token
 from tsdip.formatter import format_response
 from tsdip.models import (Event, Organization, RequestEventLog, Social,
@@ -76,7 +76,7 @@ def check_user_permission(org_id, high=False):
 
 @api_blueprint.route('', methods=['GET'], strict_slashes=False)
 @format_response
-@jwt_optional
+@jwt_required(optional=True)
 @check_jwt_user_exist
 def get_events():
     """Get events."""
@@ -167,7 +167,7 @@ def get_events():
 @api_blueprint.route('/requests', methods=['GET'])
 @format_response
 @validate_api_token
-@jwt_required
+@jwt_required()
 @check_jwt_user_exist
 def get_event_requests():
     """Get event request log."""
@@ -206,7 +206,7 @@ def get_event_requests():
 
 @api_blueprint.route('/<path:event_id>', methods=['GET'])
 @format_response
-@jwt_optional
+@jwt_required(optional=True)
 @check_jwt_user_exist
 def get_single_event(event_id):
     """Get single event."""
@@ -235,7 +235,7 @@ def get_single_event(event_id):
 
 @api_blueprint.route('<path:event_id>', methods=['PUT'])
 @format_response
-@jwt_required
+@jwt_required()
 @check_jwt_user_exist
 def update_single_event(event_id):
     """Update event."""
@@ -258,7 +258,7 @@ def update_single_event(event_id):
 
 @api_blueprint.route('/<path:event_id>/social', methods=['PUT'])
 @format_response
-@jwt_required
+@jwt_required()
 @check_jwt_user_exist
 def update_event_social(event_id):
     """Update event's social."""
@@ -290,7 +290,7 @@ def update_event_social(event_id):
 
 @api_blueprint.route('/<path:event_id>/tickets', methods=['POST'])
 @format_response
-@jwt_required
+@jwt_required()
 @check_jwt_user_exist
 def create_event_tickets(event_id):
     """Create event's tickets."""
@@ -318,7 +318,7 @@ def create_event_tickets(event_id):
 
 @api_blueprint.route('/<path:event_id>/tickets', methods=['PUT'])
 @format_response
-@jwt_required
+@jwt_required()
 @check_jwt_user_exist
 def update_event_tickets(event_id):
     """Update event's tickets."""
@@ -349,7 +349,7 @@ def update_event_tickets(event_id):
 
 @api_blueprint.route('/publish', methods=['PATCH'])
 @format_response
-@jwt_required
+@jwt_required()
 @check_jwt_user_exist
 def publish_events():
     """Publish events."""
@@ -373,7 +373,7 @@ def publish_events():
 
 @api_blueprint.route('/un_publish', methods=['PATCH'])
 @format_response
-@jwt_required
+@jwt_required()
 @check_jwt_user_exist
 def un_publish_events():
     """Publish events."""

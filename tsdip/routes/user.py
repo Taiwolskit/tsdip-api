@@ -103,7 +103,7 @@ def log_in():
 
 @api_blueprint.route('/profile', methods=['GET'])
 @format_response
-@jwt_required
+@jwt_required()
 @check_jwt_user_exist
 def get_profile():
     """Get user's profile."""
@@ -117,7 +117,7 @@ def get_profile():
 
 @api_blueprint.route('/profile', methods=['PUT'])
 @format_response
-@jwt_required
+@jwt_required()
 @check_jwt_user_exist
 def update_profile():
     """Update user's profile."""
